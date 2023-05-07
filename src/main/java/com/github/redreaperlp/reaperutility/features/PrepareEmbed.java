@@ -1,8 +1,11 @@
 package com.github.redreaperlp.reaperutility.features;
 
+import com.github.redreaperlp.reaperutility.Main;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
@@ -21,9 +24,9 @@ public class PrepareEmbed {
 
         return new EmbedBuilder()
                 .setTitle("Event Setup", "https://discord.gg/ghhKXDGQhD")
-                .addField(FieldKey.NAME.key, "The name of the event", false)
-                .addField(FieldKey.DESCRIPTION.key, "The description of the event", false)
-                .addField(FieldKey.LOCATION.key, "The location of the event", false)
+                .addField(FieldKey.NAME.key, "Events Name", false)
+                .addField(FieldKey.DESCRIPTION.key, "Your Description", false)
+                .addField(FieldKey.LOCATION.key, channel.getAsMention(), false)
                 .addField(FieldKey.DATE.key, "<t:" + (instant.toEpochMilli() / 1000) + ":f>", false)
                 .addField(FieldKey.NOTIFICATION.key, "@everyone", false)
                 .addField(FieldKey.REMAINING.key, "<t:" + (instant.toEpochMilli() / 1000) + ":R>", false)
@@ -49,6 +52,18 @@ public class PrepareEmbed {
                                 .build()
                 )
         );
+    }
+
+    public static MessageEmbed unknownCommandEmbed(SlashCommandInteractionEvent event) {
+        return new EmbedBuilder()
+                .setTitle("Unknown Command")
+                .setDescription("The command you entered is unknown! Please report this to the developer [here](https://discord.gg/ghhKXDGQhD)!")
+                .setTimestamp(Instant.now())
+                .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084909806348939365/Error.png")
+                .setAuthor(event.getUser().getName(), "https://discord.gg/ghhKXDGQhD", event.getUser().getEffectiveAvatarUrl())
+                .setColor(0xff0000)
+                .setFooter(Main.jda.getSelfUser().getName(), Main.jda.getSelfUser().getEffectiveAvatarUrl())
+                .build();
     }
 
     public enum FieldKey {

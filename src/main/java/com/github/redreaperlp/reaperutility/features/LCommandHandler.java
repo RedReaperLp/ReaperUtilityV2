@@ -1,9 +1,13 @@
 package com.github.redreaperlp.reaperutility.features;
 
+import com.github.redreaperlp.reaperutility.util.Color;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+
+import java.util.List;
 
 public class LCommandHandler extends ListenerAdapter {
     @Override
@@ -15,7 +19,7 @@ public class LCommandHandler extends ListenerAdapter {
                     clear(event);
                 }
                 case UNKNOWN -> {
-                    event.reply("This command is not yet implemented!").queue();
+                    event.replyEmbeds(PrepareEmbed.unknownCommandEmbed(event)).queue();
                 }
             }
         } else {
@@ -25,14 +29,21 @@ public class LCommandHandler extends ListenerAdapter {
                     event(event);
                 }
                 case UNKNOWN -> {
-                    event.reply("This command is not yet implemented!").queue();
+                    event.replyEmbeds(PrepareEmbed.unknownCommandEmbed(event)).queue();
                 }
             }
         }
     }
 
     private void clear(SlashCommandInteractionEvent event) {
-        event.reply("This feature is not yet implemented!").queue();
+        List<OptionMapping> options = event.getOptions();
+
+        for (OptionMapping option : options) {
+            Color.printTest(option.getName() + " " + option.getAsString());
+        }
+
+        event.reply("Clearing messages...").queue();
+//        event.getChannel().getHistory().retrievePast()
     }
 
     private void event(SlashCommandInteractionEvent event) {

@@ -1,6 +1,5 @@
 package com.github.redreaperlp.reaperutility.features;
 
-import kotlin.UNINITIALIZED_VALUE;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -9,8 +8,8 @@ public class ECommands {
     public enum EGlobalCommands {
         CLEAR("clear", "Clears up to 100 messages at once",
                 new CommandOption(OptionType.INTEGER, "amount", "The amount of messages to be cleared", true, false),
-                new CommandOption(OptionType.USER, "user", "The user whose messages should be cleared", false, false),
-                new CommandOption(OptionType.ROLE, "role", "The role whose messages should be cleared", false, false)),
+                new CommandOption(OptionType.USER, "user", "The user whose messages should be cleared"),
+                new CommandOption(OptionType.ROLE, "role", "The role whose messages should be cleared")),
         UNKNOWN(null, null);
 
 
@@ -36,7 +35,7 @@ public class ECommands {
         public SlashCommandData getCommand() {
             SlashCommandData data = Commands.slash(command, description);
             for (CommandOption option : options) {
-                data.addOption(option.type, option.name, option.description, option.required);
+                data.addOption(option.type, option.name, option.description, option.required, option.autocomplete);
             }
             return data;
         }
@@ -45,7 +44,6 @@ public class ECommands {
     public enum EGuildCommands {
         EVENT("event", "You will receive a private message to configure and schedule an event"),
         UNKNOWN(null, null);
-        ;
         private final String command;
         private final String description;
         private final CommandOption[] options;
@@ -59,7 +57,7 @@ public class ECommands {
         public SlashCommandData getCommand() {
             SlashCommandData data = Commands.slash(command, description);
             for (CommandOption option : options) {
-                data.addOption(option.type, option.name, option.description, option.required);
+                data.addOption(option.type, option.name, option.description, option.required, option.autocomplete);
             }
             return data;
         }

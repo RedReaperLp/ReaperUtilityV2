@@ -2,10 +2,7 @@ package com.github.redreaperlp.reaperutility;
 
 import ch.qos.logback.classic.Logger;
 import com.github.redreaperlp.reaperutility.database.Database;
-import com.github.redreaperlp.reaperutility.features.ECommands;
-import com.github.redreaperlp.reaperutility.features.LButtonHandler;
-import com.github.redreaperlp.reaperutility.features.LCommandHandler;
-import com.github.redreaperlp.reaperutility.features.LSelectionHandler;
+import com.github.redreaperlp.reaperutility.features.*;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
 import com.github.redreaperlp.reaperutility.util.Color;
 import com.github.redreaperlp.reaperutility.util.ColorLoggerFactory;
@@ -95,7 +92,7 @@ public class Main {
     }
 
     private void enableListeners(JDABuilder builder) {
-        builder.addEventListeners(new LCommandHandler(), new LSelectionHandler(), new LButtonHandler());
+        builder.addEventListeners(new LCommandHandler(), new LSelectionHandler(), new LButtonHandler(), new LModalHandler());
     }
 
     private void enableCommands() {
