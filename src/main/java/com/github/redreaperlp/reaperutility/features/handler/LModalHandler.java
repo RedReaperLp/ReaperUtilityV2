@@ -1,4 +1,4 @@
-package com.github.redreaperlp.reaperutility.features;
+package com.github.redreaperlp.reaperutility.features.handler;
 
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;

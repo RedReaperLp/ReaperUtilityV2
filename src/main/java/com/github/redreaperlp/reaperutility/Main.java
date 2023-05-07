@@ -2,7 +2,10 @@ package com.github.redreaperlp.reaperutility;
 
 import ch.qos.logback.classic.Logger;
 import com.github.redreaperlp.reaperutility.database.Database;
-import com.github.redreaperlp.reaperutility.features.*;
+import com.github.redreaperlp.reaperutility.features.handler.LButtonHandler;
+import com.github.redreaperlp.reaperutility.features.handler.LCommandHandler;
+import com.github.redreaperlp.reaperutility.features.handler.LModalHandler;
+import com.github.redreaperlp.reaperutility.features.handler.LSelectionHandler;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
 import com.github.redreaperlp.reaperutility.util.Color;
 import com.github.redreaperlp.reaperutility.util.ColorLoggerFactory;
@@ -97,16 +100,16 @@ public class Main {
 
     private void enableCommands() {
         new Color.Print("Updating global commands").printDebug();
-        for (ECommands.EGlobalCommands command : ECommands.EGlobalCommands.values()) {
-            if (command != ECommands.EGlobalCommands.UNKNOWN)
+        for (LCommandHandler.ECommands.EGlobalCommands command : LCommandHandler.ECommands.EGlobalCommands.values()) {
+            if (command != LCommandHandler.ECommands.EGlobalCommands.UNKNOWN)
                 jda.upsertCommand(command.getCommand()).queue();
         }
 
         for (Guild guild : jda.getGuilds()) {
             new Color.Print("Updating commands for guild " + guild.getName()).printDebug();
             List<CommandData> data = new ArrayList<>();
-            for (ECommands.EGuildCommands command : ECommands.EGuildCommands.values()) {
-                if (command != ECommands.EGuildCommands.UNKNOWN)
+            for (LCommandHandler.ECommands.EGuildCommands command : LCommandHandler.ECommands.EGuildCommands.values()) {
+                if (command != LCommandHandler.ECommands.EGuildCommands.UNKNOWN)
                     data.add(command.getCommand());
             }
             guild.updateCommands().addCommands(data).queue();

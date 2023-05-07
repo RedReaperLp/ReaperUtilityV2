@@ -1,4 +1,4 @@
-package com.github.redreaperlp.reaperutility.features;
+package com.github.redreaperlp.reaperutility.features.handler;
 
 import com.github.redreaperlp.reaperutility.util.Color;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;

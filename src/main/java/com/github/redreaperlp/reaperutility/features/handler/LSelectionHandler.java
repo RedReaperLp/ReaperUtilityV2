@@ -1,4 +1,4 @@
-package com.github.redreaperlp.reaperutility.features;
+package com.github.redreaperlp.reaperutility.features.handler;
 
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
