@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class Restarter implements Runnable {
@@ -52,7 +53,7 @@ public class Restarter implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }).start();
     }
@@ -84,7 +85,7 @@ public class Restarter implements Runnable {
                 }
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -155,14 +156,14 @@ public class Restarter implements Runnable {
                 if (e.getMessage().contains("Exiting")) {
                     return;
                 }
-                System.out.println(e.getMessage());
+                e.printStackTrace();
                 Color.RED.printError("Exception in thread " + t.getName() + ": " + e.getMessage());
-                String stackTrace = "";
+                StringBuilder stackTrace = new StringBuilder();
                 for (StackTraceElement str : e.getStackTrace()) {
-                    stackTrace += str.toString() + "\n";
+                    stackTrace.append(str.toString()).append("\n");
                 }
                 if (Main.jda != null) {
-                    Main.jda.getTextChannelById(1086673451777007636L).sendMessageEmbeds(
+                    Objects.requireNonNull(Main.jda.getTextChannelById(1086673451777007636L)).sendMessageEmbeds(
                             new EmbedBuilder()
                                     .setTitle("Exception in thread " + t.getName() + ": " + e.getMessage())
                                     .setDescription("```" + stackTrace + "```")

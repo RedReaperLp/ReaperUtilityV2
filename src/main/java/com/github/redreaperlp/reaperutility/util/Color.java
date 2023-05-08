@@ -2,7 +2,11 @@ package com.github.redreaperlp.reaperutility.util;
 
 import com.github.redreaperlp.reaperutility.Main;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public enum Color {
     RED("\u001B[31m"),
@@ -93,7 +97,32 @@ public enum Color {
 
 
     public static class Print {
+
         private String message = "";
+        private static BlockingQueue<String> printQueue = new LinkedBlockingQueue<>();
+        private static Thread printThread;
+
+        public void print(String message) {
+            printQueue.add(message);
+            if (printThread == null || !printThread.isAlive()) {
+                printThread = new Thread(this::processPrintQueue);
+                printThread.start();
+            }
+        }
+
+        private void processPrintQueue() {
+            while (true) {
+                try {
+                    String message = printQueue.take();
+                    System.out.print(message);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
+
 
         public Print(String message, Color color) {
             if (Main.colored) {
@@ -134,87 +163,107 @@ public enum Color {
         }
 
         public void printSuccess(boolean isAppender, boolean getsAppender) {
+            var ref = new Object() {
+                String finalMessage = "";
+            };
             if (message != null) Arrays.stream(message.split("\n")).toList().forEach(
                     line -> {
                         if (Main.colored) {
-                            System.out.print((isAppender ? "" : (CYAN.col() + "<" + GREEN.col() + counter() + CYAN.col() + "> ")) + GREEN.col() + line + RESET.col());
+                            ref.finalMessage += ((isAppender ? "" : (CYAN.col() + "<" + GREEN.col() + counter() + CYAN.col() + "> ")) + GREEN.col() + line + RESET.col());
                         } else {
-                            System.out.print((isAppender ? "" : ("<" + counter() + "> ")) + line);
+                            ref.finalMessage += (isAppender ? "" : ("<" + counter() + "> ")) + line;
                         }
                         if (!getsAppender) {
-                            System.out.println();
+                            ref.finalMessage += "\n";
                         }
                     }
             );
-            else System.out.println((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            else ref.finalMessage += ((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            print(ref.finalMessage);
         }
 
         public void printWarning(boolean isAppender, boolean getsAppender) {
+            var ref = new Object() {
+                String finalMessage = "";
+            };
             if (message != null) Arrays.stream(message.split("\n")).toList().forEach(
                     line -> {
                         if (Main.colored) {
-                            System.out.print((isAppender ? "" : (CYAN.col() + "<" + YELLOW.col() + counter() + CYAN.col() + "> " + YELLOW.col() + "WARN  ")) + RESET.col() + line + RESET.col());
+                            ref.finalMessage += ((isAppender ? "" : (CYAN.col() + "<" + YELLOW.col() + counter() + CYAN.col() + "> " + YELLOW.col() + "WARN  ")) + RESET.col() + line + RESET.col());
                         } else {
-                            System.out.print((isAppender ? "" : ("<" + counter() + "> WARN  ")) + line);
+                            ref.finalMessage += ((isAppender ? "" : ("<" + counter() + "> WARN  ")) + line);
                         }
                         if (!getsAppender) {
-                            System.out.println();
+                            ref.finalMessage += "\n";
                         }
                     }
             );
-            else System.out.println((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            else ref.finalMessage += ((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            print(ref.finalMessage);
         }
 
         public void printError(boolean isAppender, boolean getsAppender) {
+            var ref = new Object() {
+                String finalMessage = "";
+            };
             if (message != null) Arrays.stream(message.split("\n")).toList().forEach(
                     line -> {
                         if (Main.colored) {
-                            System.out.print((isAppender ? "" : (CYAN.col() + "<" + RED.col() + counter() + CYAN.col() + "> " + RED.col() + "ERROR ")) + RESET.col() + line + RESET.col());
+                            ref.finalMessage += ((isAppender ? "" : (CYAN.col() + "<" + RED.col() + counter() + CYAN.col() + "> " + RED.col() + "ERROR ")) + RESET.col() + line + RESET.col());
                         } else {
-                            System.out.print((isAppender ? "" : ("<" + counter() + "> ERROR ")) + line);
+                            ref.finalMessage += ((isAppender ? "" : ("<" + counter() + "> ERROR ")) + line);
                         }
                         if (!getsAppender) {
-                            System.out.println();
+                            ref.finalMessage += "\n";
                         }
                     }
             );
-            else System.out.println((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            else ref.finalMessage += ((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            print(ref.finalMessage);
         }
 
         public void printInfo(boolean isAppender, boolean getsAppender) {
+            var ref = new Object() {
+                String finalMessage = "";
+            };
             if (message != null) Arrays.stream(message.split("\n")).toList().forEach(
                     line -> {
                         if (Main.colored) {
-                            System.out.print((isAppender ? "" : (CYAN.col() + "<" + LIGHT_BLUE.col() + counter() + CYAN.col() + "> " + LIGHT_BLUE.col() + "INFO  ")) + RESET.col() + line + RESET.col());
+                            ref.finalMessage += ((isAppender ? "" : (CYAN.col() + "<" + LIGHT_BLUE.col() + counter() + CYAN.col() + "> " + LIGHT_BLUE.col() + "INFO  ")) + RESET.col() + line + RESET.col());
                         } else {
-                            System.out.print((isAppender ? "" : ("<" + counter() + "> INFO  ")) + line);
+                            ref.finalMessage += ((isAppender ? "" : ("<" + counter() + "> INFO  ")) + line);
                         }
                         if (!getsAppender) {
-                            System.out.println();
+                            ref.finalMessage += "\n";
                         }
                     }
             );
-            else System.out.println((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            else ref.finalMessage += ((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+            print(ref.finalMessage);
         }
 
         public void printDebug(boolean isAppender, boolean getsAppender) {
+            var ref = new Object() {
+                String finalMessage = "";
+            };
             if (Main.debug) {
                 if (message != null) {
                     Arrays.stream(message.split("\n")).toList().forEach(
                             line -> {
                                 if (Main.colored) {
-                                    System.out.print((isAppender ? "" : (CYAN.col() + "<" + ORANGE.col() + counter() + CYAN.col() + ">" + ORANGE.col() + " DEBUG ")) + GRAY.col() + line + RESET.col());
+                                    ref.finalMessage += ((isAppender ? "" : (CYAN.col() + "<" + ORANGE.col() + counter() + CYAN.col() + ">" + ORANGE.col() + " DEBUG ")) + GRAY.col() + line + RESET.col());
                                 } else {
-                                    System.out.print((isAppender ? "" : ("<" + counter() + "> DEBUG ")) + line);
+                                    ref.finalMessage += ((isAppender ? "" : ("<" + counter() + "> DEBUG ")) + line);
                                 }
                                 if (!getsAppender) {
-                                    System.out.println();
+                                    ref.finalMessage += "\n";
                                 }
                             }
                     );
                 } else {
-                    System.out.println((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
+                    ref.finalMessage += ((getsAppender || !isAppender ? ("<" + counter() + "> ") : "") + "null");
                 }
+                print(ref.finalMessage);
             }
         }
 
