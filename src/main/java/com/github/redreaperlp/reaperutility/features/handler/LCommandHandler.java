@@ -1,8 +1,9 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
-import com.github.redreaperlp.reaperutility.util.Color;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -11,7 +12,9 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class LCommandHandler extends ListenerAdapter {
     @Override
@@ -40,14 +43,68 @@ public class LCommandHandler extends ListenerAdapter {
     }
 
     private void clear(SlashCommandInteractionEvent event) {
-        List<OptionMapping> options = event.getOptions();
+        event.deferReply().setEphemeral(true).queue();
+        long timestamp = System.currentTimeMillis();
+        int cleared = 0;
+        try {
+            List<OptionMapping> options = event.getOptions();
 
-        for (OptionMapping option : options) {
-            Color.printTest(option.getName() + " " + option.getAsString());
+            int amount = 0;
+            long userId = 0;
+            long roleId = 0;
+
+            for (OptionMapping option : options) {
+                if (option.getName().equals("amount")) {
+                    amount = option.getAsInt();
+                } else if (option.getName().equals("user")) {
+                    userId = option.getAsUser().getIdLong();
+                } else if (option.getName().equals("role")) {
+                    roleId = option.getAsRole().getIdLong();
+                }
+            }
+
+            if (amount == 0) {
+                event.replyEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                return;
+            } else {
+                if (amount > 100) {
+                    amount = 100;
+                }
+
+                List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
+                List<Message> toDel = new ArrayList<>();
+                for (Message message : messages) {
+                    if (userId != 0) {
+                        if (message.getAuthor().getIdLong() == userId) {
+                            toDel.add(message);
+                            cleared++;
+                        }
+                    } else if (roleId != 0) {
+                        Member member = Objects.requireNonNull(event.getGuild()).getMember(message.getAuthor());
+                        if (member == null) {
+                            member = event.getGuild().retrieveMember(message.getAuthor()).complete();
+                        }
+                        for (Role role : member.getRoles()) {
+                            if (role.getIdLong() == roleId) {
+                                toDel.add(message);
+                                cleared++;
+                            }
+                        }
+                    } else {
+                        toDel.add(message);
+                        cleared++;
+                    }
+                }
+                if (toDel.size() == 0) {
+                    event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                    return;
+                }
+                event.getChannel().purgeMessages(toDel);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        event.reply("Clearing messages...").queue();
-//        event.getChannel().getHistory().retrievePast()
+        event.getHook().sendMessage("Cleared " + cleared + " messages in " + (System.currentTimeMillis() - timestamp) + "ms").queue();
     }
 
     private void event(SlashCommandInteractionEvent event) {

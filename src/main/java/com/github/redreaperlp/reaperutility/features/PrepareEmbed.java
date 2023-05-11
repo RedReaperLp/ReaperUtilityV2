@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public class PrepareEmbed {
@@ -64,6 +65,17 @@ public class PrepareEmbed {
                 .setAuthor(event.getUser().getName(), "https://discord.gg/ghhKXDGQhD", event.getUser().getEffectiveAvatarUrl())
                 .setColor(0xff0000)
                 .setFooter(Main.jda.getSelfUser().getName(), Main.jda.getSelfUser().getEffectiveAvatarUrl())
+                .build();
+    }
+
+    public static MessageEmbed noMessagesToClear() {
+        return new EmbedBuilder()
+                .setTitle("No Messages")
+                .setColor(0xffff00)
+                .setDescription("There are no messages I can clear!")
+                .setTimestamp(Instant.now())
+                .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084909806348939365/Error.png")
+                .setAuthor(Main.jda.getSelfUser().getName(), "https://discord.gg/ghhKXDGQhD", Main.jda.getSelfUser().getEffectiveAvatarUrl())
                 .build();
     }
 

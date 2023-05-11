@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -35,6 +36,7 @@ public class Main {
 
 
     public static void main(String[] args) {
+        new Color.Print("Loading Settings...").printWarning();
         Main main = new Main();
         Restarter restarter = new Restarter();
         restarter.uncaughtHandler();
@@ -67,6 +69,7 @@ public class Main {
         JSettings.JJDASettings jdaSettings = settings.jdaSettings();
 
         JDABuilder builder = JDABuilder.createDefault(jdaSettings.token())
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setActivity(Activity.of(jdaSettings.activity(), jdaSettings.activityText()))
                 .setStatus(jdaSettings.status());
 
