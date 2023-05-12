@@ -21,6 +21,18 @@ public class User {
         users.add(this);
     }
 
+    public static void clean() {
+        List<User> toRemove = new ArrayList<>();
+        for (User user : users) {
+            if (user.getCurrentEditor() != null) {
+                toRemove.add(user);
+            }
+        }
+        for (User user : toRemove) {
+            user.remove();
+        }
+    }
+
     public long getId() {
         return id;
     }
@@ -67,12 +79,13 @@ public class User {
     }
 
     public void remove() {
+        System.out.println("Removing user " + id);
         users.remove(this);
         if (currentEditor != null) {
             PrivateChannel channel = Main.jda.getUserById(id).openPrivateChannel().complete();
             Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
-            oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).queue();
-            oldMessage.editMessageComponents(PrepareEmbed.eventSetupActionRow(false, true)).queue();
+            oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).complete();
+            oldMessage.editMessageComponents(PrepareEmbed.eventSetupActionRow(false, true)).complete();
         }
     }
 }

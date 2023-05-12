@@ -58,9 +58,7 @@ public class Main {
     }
 
     public static void cleanUp() {
-        for (User user : User.getUsers()) {
-            user.remove();
-        }
+        User.clean();
     }
 
     private void start() {
