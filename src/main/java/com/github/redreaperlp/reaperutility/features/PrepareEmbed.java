@@ -1,6 +1,7 @@
 package com.github.redreaperlp.reaperutility.features;
 
 import com.github.redreaperlp.reaperutility.Main;
+import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import com.github.redreaperlp.reaperutility.features.handler.LButtonHandler;
 import com.github.redreaperlp.reaperutility.features.handler.LSelectionHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -14,7 +15,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collection;
 import java.util.List;
 
 public class PrepareEmbed {
@@ -40,11 +40,29 @@ public class PrepareEmbed {
                 .build();
     }
 
-    public static List<ActionRow> eventSetupActionRow() {
+    public static MessageEmbed eventCompleted(PreparedEvent event) {
+        EmbedBuilder builder = new EmbedBuilder().setTitle(event.getName());
+        if (event.getDescription() != null && !event.getDescription().equalsIgnoreCase("your description")) {
+            builder.setDescription(event.getDescription());
+        }
+        if (event.getLocation() != null) {
+            builder.addField(FieldKey.LOCATION.key, event.getLocation(), false);
+        }
+        builder.addField(FieldKey.DATE.key, "<t:" + (event.getDate()) + ":f>", false);
+        builder.addField(FieldKey.REMAINING.key, "<t:" + (event.getDate()) + ":R>", false);
+        builder.addField(FieldKey.ACCEPTED.key, "-", true);
+        builder.addField(FieldKey.DECLINED.key, "-", true);
+        builder.addField(FieldKey.UNSURE.key, "-", true);
+        builder.setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png");
+        return builder.build();
+    }
+
+    public static List<ActionRow> eventSetupActionRow(boolean completeEnabled, boolean selectEnabled) {
         return List.of(
                 ActionRow.of(
-                        LButtonHandler.ButtonKey.COMPLETE.getButton(),
+                        LButtonHandler.ButtonKey.COMPLETE.getButton().withDisabled(!completeEnabled),
                         LButtonHandler.ButtonKey.CANCEL.getButton(),
+                        LButtonHandler.ButtonKey.SELECT.getButton().withDisabled(!selectEnabled),
                         LButtonHandler.ButtonKey.HELP.getButton()
                 ),
                 ActionRow.of(
@@ -79,7 +97,7 @@ public class PrepareEmbed {
                 .build();
     }
 
-    public enum FieldKey {
+    public static enum FieldKey {
         NAME("Name"),
         DESCRIPTION("Description"),
         LOCATION("Location"),
@@ -87,12 +105,27 @@ public class PrepareEmbed {
         NOTIFICATION("Notification"),
         REMAINING("Remaining"),
         EVENT_CHANNEL("Event Channel"),
-        ;
+        ACCEPTED("Accepted"),
+        DECLINED("Declined"),
+        UNSURE("Unsure");
 
-        private final String key;
+        public final String key;
 
         FieldKey(String key) {
             this.key = key;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public static FieldKey fromKey(String key) {
+            for (FieldKey fieldKey : values()) {
+                if (fieldKey.key.equals(key)) {
+                    return fieldKey;
+                }
+            }
+            return null;
         }
     }
 }

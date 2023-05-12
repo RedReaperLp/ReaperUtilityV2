@@ -13,7 +13,11 @@ public class LSelectionHandler extends ListenerAdapter {
     }
 
     public enum SelectionKey {
-        EVENT_SETUP("event-setup", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
+        EVENT_SETUP("event.setup", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
+                SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
+                SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
+                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id)),
+        EVENT_EDIT("event.edit", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
                 SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
                 SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
                 SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id)),

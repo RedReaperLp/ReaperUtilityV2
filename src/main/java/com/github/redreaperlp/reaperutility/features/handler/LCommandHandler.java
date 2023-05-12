@@ -1,6 +1,8 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
+import com.github.redreaperlp.reaperutility.User;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
+import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
@@ -74,25 +76,32 @@ public class LCommandHandler extends ListenerAdapter {
                 List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
                 List<Message> toDel = new ArrayList<>();
                 for (Message message : messages) {
-                    if (userId != 0) {
-                        if (message.getAuthor().getIdLong() == userId) {
-                            toDel.add(message);
-                            cleared++;
-                        }
-                    } else if (roleId != 0) {
-                        Member member = Objects.requireNonNull(event.getGuild()).getMember(message.getAuthor());
-                        if (member == null) {
-                            member = event.getGuild().retrieveMember(message.getAuthor()).complete();
-                        }
-                        for (Role role : member.getRoles()) {
-                            if (role.getIdLong() == roleId) {
+                    if (event.isFromGuild()) {
+                        if (userId != 0) {
+                            if (message.getAuthor().getIdLong() == userId) {
                                 toDel.add(message);
                                 cleared++;
                             }
+                        } else if (roleId != 0) {
+                            Member member = Objects.requireNonNull(event.getGuild()).getMember(message.getAuthor());
+                            if (member == null) {
+                                member = event.getGuild().retrieveMember(message.getAuthor()).complete();
+                            }
+                            for (Role role : member.getRoles()) {
+                                if (role.getIdLong() == roleId) {
+                                    toDel.add(message);
+                                    cleared++;
+                                }
+                            }
+                        } else {
+                            toDel.add(message);
+                            cleared++;
                         }
                     } else {
-                        toDel.add(message);
-                        cleared++;
+                        if (message.getAuthor().isBot()) {
+                            toDel.add(message);
+                            cleared++;
+                        }
                     }
                 }
                 if (toDel.size() == 0) {
@@ -109,8 +118,10 @@ public class LCommandHandler extends ListenerAdapter {
 
     private void event(SlashCommandInteractionEvent event) {
         PrivateChannel channel = event.getUser().openPrivateChannel().complete();
-        Message message = channel.sendMessageEmbeds(PrepareEmbed.eventSetup(event.getChannel())).addComponents(PrepareEmbed.eventSetupActionRow()).complete();
+        Message message = channel.sendMessageEmbeds(PrepareEmbed.eventSetup(event.getChannel())).addComponents(PrepareEmbed.eventSetupActionRow(false, false)).complete();
+        PreparedEvent prep = PreparedEvent.getPreparation(message);
         event.reply("I have sent you a private [message](" + message.getJumpUrl() + ") to configure your event!").setEphemeral(true).queue();
+        User.getUser(event.getUser().getIdLong()).setCurrentEditor(prep);
     }
 
     public class ECommands {

@@ -90,6 +90,7 @@ public class Restarter implements Runnable {
     }
 
     public static void restart() {
+        Main.cleanUp();
         try {
             new Color.Print("Restarting...", Color.GREEN).printWarning();
             File file = new File("start.bat");

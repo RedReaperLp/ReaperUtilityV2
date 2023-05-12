@@ -57,6 +57,12 @@ public class Main {
         throw new RuntimeException("Exiting");
     }
 
+    public static void cleanUp() {
+        for (User user : User.getUsers()) {
+            user.remove();
+        }
+    }
+
     private void start() {
         Logger logger = (Logger) LoggerFactory.getLogger("net.dv8tion.jda");
         logger.getLoggerContext().reset();
@@ -72,7 +78,6 @@ public class Main {
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setActivity(Activity.of(jdaSettings.activity(), jdaSettings.activityText()))
                 .setStatus(jdaSettings.status());
-
         enableIntents(builder);
         enableListeners(builder);
         try {
