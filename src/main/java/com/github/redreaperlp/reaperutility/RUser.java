@@ -10,27 +10,16 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class User {
-    private static List<User> users = new ArrayList<>();
+public class RUser {
+    private static List<RUser> RUsers = new ArrayList<>();
 
     private long id;
     private PreparedEvent currentEditor;
+    private int currentEditorCount = 0;
 
-    public User(long id) {
+    public RUser(long id) {
         this.id = id;
-        users.add(this);
-    }
-
-    public static void clean() {
-        List<User> toRemove = new ArrayList<>();
-        for (User user : users) {
-            if (user.getCurrentEditor() != null) {
-                toRemove.add(user);
-            }
-        }
-        for (User user : toRemove) {
-            user.remove();
-        }
+        RUsers.add(this);
     }
 
     public long getId() {
@@ -41,51 +30,59 @@ public class User {
         return currentEditor;
     }
 
+    public void increasePrepCount() {
+        currentEditorCount++;
+    }
+
+    public void decreasePrepCount() {
+        currentEditorCount--;
+    }
+
+    public int getPrepCount() {
+        return currentEditorCount;
+    }
+
     public void setCurrentEditor(PreparedEvent newEditor) {
-        System.out.println(new Gson().toJson(newEditor));
-        System.out.println(new Gson().toJson(currentEditor));
         try {
             PrivateChannel channel = Main.jda.getUserById(id).openPrivateChannel().complete();
             if (currentEditor != null) {
-                Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
-                oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).queue();
-                oldMessage.editMessageComponents(PrepareEmbed.eventSetupActionRow(false, true)).queue();
-                currentEditor = newEditor;
+                try {
+                    Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
+                    oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).queue();
+                } catch (Exception e) {
+                    System.out.println("Could not edit old message");
+                }
             }
             currentEditor = newEditor;
             if (currentEditor != null) {
                 Message newMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
                 newMessage.editMessageEmbeds(new EmbedBuilder(newMessage.getEmbeds().get(0)).setTitle("Event Setup").build()).queue();
-                newMessage.editMessageComponents(PrepareEmbed.eventSetupActionRow(false, false)).queue();
-
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static User getUser(long id) {
-        for (User user : users) {
-            if (user.getId() == id) {
-                return user;
+    public static RUser getUser(long id) {
+        for (RUser RUser : RUsers) {
+            if (RUser.getId() == id) {
+                return RUser;
             }
         }
-        return new User(id);
+        return new RUser(id);
     }
 
-    public static List<User> getUsers() {
-        return users;
+    public static List<RUser> getUsers() {
+        return RUsers;
     }
 
     public void remove() {
         System.out.println("Removing user " + id);
-        users.remove(this);
+        RUsers.remove(this);
         if (currentEditor != null) {
             PrivateChannel channel = Main.jda.getUserById(id).openPrivateChannel().complete();
             Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
             oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).complete();
-            oldMessage.editMessageComponents(PrepareEmbed.eventSetupActionRow(false, true)).complete();
         }
     }
 }

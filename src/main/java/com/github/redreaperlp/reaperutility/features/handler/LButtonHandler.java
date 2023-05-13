@@ -1,12 +1,9 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
-import com.github.redreaperlp.reaperutility.User;
-import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
+import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import com.github.redreaperlp.reaperutility.util.Color;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -21,18 +18,24 @@ public class LButtonHandler extends ListenerAdapter {
                 PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
                 prepEvent.complete();
                 System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(prepEvent));
-                event.reply("This feature is not yet implemented!").complete();
+                event.deferEdit().queue();
             }
             case SELECT -> {
                 PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
-                User user = User.getUser(event.getUser().getIdLong());
-                user.setCurrentEditor(prepEvent);
+                RUser rUser = RUser.getUser(event.getUser().getIdLong());
+                if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prepEvent.getEditorId()) {
+                    event.reply("You are already editing this event!").queue();
+                    return;
+                }
+                rUser.setCurrentEditor(prepEvent);
                 event.deferEdit().queue();
             }
             case CANCEL -> {
-                Color.printTest("Button pressed");
-                event.getMessage().delete().complete();
-                event.deferEdit().complete();
+                PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
+                prepEvent.cancel();
+                RUser rUser = RUser.getUser(event.getUser().getIdLong());
+                rUser.setCurrentEditor(null);
+                event.deferEdit().queue();
             }
         }
     }

@@ -57,12 +57,12 @@ public class PrepareEmbed {
         return builder.build();
     }
 
-    public static List<ActionRow> eventSetupActionRow(boolean completeEnabled, boolean selectEnabled) {
+    public static List<ActionRow> eventSetupActionRow(boolean completeEnabled) {
         return List.of(
                 ActionRow.of(
                         LButtonHandler.ButtonKey.COMPLETE.getButton().withDisabled(!completeEnabled),
                         LButtonHandler.ButtonKey.CANCEL.getButton(),
-                        LButtonHandler.ButtonKey.SELECT.getButton().withDisabled(!selectEnabled),
+                        LButtonHandler.ButtonKey.SELECT.getButton(),
                         LButtonHandler.ButtonKey.HELP.getButton()
                 ),
                 ActionRow.of(

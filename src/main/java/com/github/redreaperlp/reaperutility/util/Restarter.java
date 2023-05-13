@@ -1,6 +1,7 @@
 package com.github.redreaperlp.reaperutility.util;
 
 import com.github.redreaperlp.reaperutility.Main;
+import com.github.redreaperlp.reaperutility.RUser;
 import net.dv8tion.jda.api.EmbedBuilder;
 
 import java.io.*;
@@ -90,7 +91,6 @@ public class Restarter implements Runnable {
     }
 
     public static void restart() {
-        Main.cleanUp();
         try {
             TimeUnit.SECONDS.sleep(2);
             new Color.Print("Restarting...", Color.GREEN).printWarning();

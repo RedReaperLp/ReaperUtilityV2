@@ -2,9 +2,11 @@ package com.github.redreaperlp.reaperutility.features.event;
 
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
@@ -26,7 +28,6 @@ public class PreparedEvent {
 
     public PreparedEvent(long editorId) {
         this.editorId = editorId;
-
     }
 
     public void setName(String name) {
@@ -104,6 +105,50 @@ public class PreparedEvent {
         return editorId;
     }
 
+    private void setEventChannel(String value) {
+        GuildMessageChannel channel = Objects.requireNonNull(Main.jda.getTextChannelById(value.replaceAll("[<#>]", "")));
+        targetMessage = new long[]{
+                channel.getGuild().getIdLong(),
+                channel.getIdLong(),
+                0
+        };
+    }
+
+    public void modifyEditor(PrivateChannel channel) {
+        Message message = channel.retrieveMessageById(editorId).complete();
+        EmbedBuilder builder = new EmbedBuilder(message.getEmbeds().get(0));
+        builder.clearFields();
+        builder.addField(PrepareEmbed.FieldKey.NAME.key(), name, false);
+        if (description != null && !description.equals("Your Description")) {
+            builder.addField(PrepareEmbed.FieldKey.DESCRIPTION.key(), description, false);
+        }
+        if (location != null && !location.equals("Your Location")) {
+            builder.addField(PrepareEmbed.FieldKey.LOCATION.key(), location, false);
+        }
+        builder.addField(PrepareEmbed.FieldKey.DATE.key(), "<t:" + date + ":f>", false);
+        builder.addField(PrepareEmbed.FieldKey.REMAINING.key, "<t:" + date + ":R>", false);
+        if (notification != null && !notification.equals("none")) {
+            builder.addField(PrepareEmbed.FieldKey.NOTIFICATION.key(), notification, false);
+        }
+        if (targetMessage != null) {
+            builder.addField(PrepareEmbed.FieldKey.EVENT_CHANNEL.key(), "<#" + targetMessage[1] + ">", false);
+        }
+        message.editMessageEmbeds(builder.build()).queue();
+    }
+
+    public void cancel() {
+        preparations.remove(this);
+        Objects.requireNonNull(Main.jda.getTextChannelById(targetMessage[1])).deleteMessageById(targetMessage[2]).queue();
+    }
+
+    public void complete() {
+        Guild tarGuild = Objects.requireNonNull(Main.jda.getGuildById(targetMessage[0]));
+        MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
+        targetMessage[2] = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this)).complete().getIdLong();
+        Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], date));
+        preparations.remove(this);
+    }
+
     public static PreparedEvent getPreparation(Message message) {
         for (PreparedEvent preparation : preparations) {
             if (preparation.getEditorId() == message.getIdLong()) {
@@ -128,22 +173,5 @@ public class PreparedEvent {
             }
         }
         return preparation;
-    }
-
-    private void setEventChannel(String value) {
-        GuildMessageChannel channel = Objects.requireNonNull(Main.jda.getTextChannelById(value.replaceAll("[<#>]", "")));
-        targetMessage = new long[]{
-                channel.getGuild().getIdLong(),
-                channel.getIdLong(),
-                0
-        };
-    }
-
-    public void complete() {
-        Guild tarGuild = Objects.requireNonNull(Main.jda.getGuildById(targetMessage[0]));
-        MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
-        targetMessage[2] = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this)).complete().getIdLong();
-        Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], date));
-        preparations.remove(this);
     }
 }
