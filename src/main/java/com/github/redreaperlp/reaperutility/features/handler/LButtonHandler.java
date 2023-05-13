@@ -35,7 +35,11 @@ public class LButtonHandler extends ListenerAdapter {
                 prepEvent.cancel();
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
                 rUser.setCurrentEditor(null);
-                event.deferEdit().queue();
+                try {
+                    event.deferEdit().complete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -45,7 +49,7 @@ public class LButtonHandler extends ListenerAdapter {
         COMPLETE("Complete", "event.complete", ButtonStyle.SUCCESS),
         CANCEL("Cancel", "event.cancel", ButtonStyle.DANGER),
         HELP("❓", "event.help", ButtonStyle.SECONDARY),
-        SELECT("Select","event.select" , ButtonStyle.PRIMARY),
+        SELECT("Select", "event.select", ButtonStyle.PRIMARY),
         UNKNOWN("UNKNOWN", "UNKNOWN", ButtonStyle.UNKNOWN);
 
         private final String label;

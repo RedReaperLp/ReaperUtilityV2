@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +95,7 @@ public class PreparedEvent {
      * [2] = messageId (is being set by {@link PreparedEvent#complete()} <br>
      * set with {@link PreparedEvent#setEventChannel(long, long)}
      *
-     * @return the event target as long[]
+     * @return the event target as {@link Long}[]
      */
     public long[] getTargetMessage() {
         return targetMessage;
@@ -114,7 +115,12 @@ public class PreparedEvent {
         };
     }
 
-    public void modifyEditor(PrivateChannel channel) {
+
+    /**
+     * Modifies the editor message associated with this preparation
+      * @param channel the channel of the editor message to reduce requests ({@link PrivateChannel})
+     */
+    public void modifyEditor(@NotNull PrivateChannel channel) {
         Message message = channel.retrieveMessageById(editorId).complete();
         EmbedBuilder builder = new EmbedBuilder(message.getEmbeds().get(0));
         builder.clearFields();

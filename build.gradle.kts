@@ -1,4 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.kotlin.dsl.java
+
 plugins {
     id("java")
     id("application")
@@ -37,6 +39,15 @@ tasks {
     }
 }
 
+tasks.withType<Jar> {
+    manifest {
+        attributes(
+                "Main-Class" to "com.github.redreaperlp.reaperutility.Main"
+        )
+    }
+}
+
 application {
     mainClass.set("com.github.redreaperlp.reaperutility.Main")
 }
+
