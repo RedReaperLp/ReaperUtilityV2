@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,9 +137,9 @@ public class PreparedEvent {
         message.editMessageEmbeds(builder.build()).queue();
     }
 
-    public void cancel() {
+    public void cancel(ButtonInteractionEvent event) {
         preparations.remove(this);
-        Objects.requireNonNull(Main.jda.getTextChannelById(targetMessage[1])).deleteMessageById(targetMessage[2]).queue();
+        event.getMessage().delete().queue();
     }
 
     public void complete() {

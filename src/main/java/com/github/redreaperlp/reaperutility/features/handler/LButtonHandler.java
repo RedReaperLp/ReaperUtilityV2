@@ -2,7 +2,6 @@ package com.github.redreaperlp.reaperutility.features.handler;
 
 import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
-import com.github.redreaperlp.reaperutility.util.Color;
 import com.google.gson.GsonBuilder;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -31,8 +30,9 @@ public class LButtonHandler extends ListenerAdapter {
                 event.deferEdit().queue();
             }
             case CANCEL -> {
+                event.reply("Cancelling...").queue();
                 PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
-                prepEvent.cancel();
+                prepEvent.cancel(event);
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
                 rUser.setCurrentEditor(null);
                 event.deferEdit().queue();
