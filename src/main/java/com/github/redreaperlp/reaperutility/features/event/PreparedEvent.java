@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,9 +137,9 @@ public class PreparedEvent {
         message.editMessageEmbeds(builder.build()).queue();
     }
 
-    public void cancel(ButtonInteractionEvent event) {
+    public void cancel(MessageChannel event) {
         preparations.remove(this);
-        event.getMessage().delete().queue();
+        event.retrieveMessageById(editorId).complete().delete().queue();
     }
 
     public void complete() {
@@ -150,6 +150,11 @@ public class PreparedEvent {
         preparations.remove(this);
     }
 
+    /**
+     * Returns the preparation of the message
+     * @param message the message (Must contain an embed with the information needed)
+     * @return the preparation of the message
+     */
     public static PreparedEvent getPreparation(Message message) {
         for (PreparedEvent preparation : preparations) {
             if (preparation.getEditorId() == message.getIdLong()) {

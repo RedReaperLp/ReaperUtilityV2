@@ -43,6 +43,7 @@ public class LCommandHandler extends ListenerAdapter {
     }
 
     List<Long> clearingChannels = new ArrayList<>();
+
     private void clear(SlashCommandInteractionEvent event) {
         if (clearingChannels.contains(event.getChannel().getIdLong())) {
             event.reply("Please wait until the current clear command is finished").setEphemeral(true).queue();
@@ -104,19 +105,34 @@ public class LCommandHandler extends ListenerAdapter {
                             }
                         } else {
                             if (message.getAuthor().isBot()) {
-                                toDel.add(message);
-                                cleared++;
+                                if (message.getEmbeds().size() == 0) {
+                                    toDel.add(message);
+                                    cleared++;
+                                } else if (message.getEmbeds().get(0).getTitle().contains("Event Setup")) {
+                                    RUser rUser = RUser.getUser(event.getUser().getIdLong());
+                                    PreparedEvent prep = PreparedEvent.getPreparation(message);
+                                    if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prep.getEditorId()) {
+                                        prep.cancel(event.getUser().openPrivateChannel().complete());
+                                        cleared++;
+                                    } else {
+                                        toDel.add(message);
+                                        cleared++;
+                                    }
+                                    rUser.decreasePrepCount();
+                                }
                             }
                         }
-                    }
-                    if (toDel.size() == 0) {
-                        clearingChannels.remove(event.getChannel().getIdLong());
-                        event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
-                        return;
-                    }
-                    List<CompletableFuture<Void>> future = event.getChannel().purgeMessages(toDel);
-                    for (CompletableFuture<Void> voidCompletableFuture : future) {
-                        voidCompletableFuture.join();
+                        if (cleared == 0) {
+                            clearingChannels.remove(event.getChannel().getIdLong());
+                            event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                            return;
+                        }
+                        if (toDel.size() != 0) {
+                            List<CompletableFuture<Void>> future = event.getChannel().purgeMessages(toDel);
+                            for (CompletableFuture<Void> voidCompletableFuture : future) {
+                                voidCompletableFuture.join();
+                            }
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -133,7 +149,7 @@ public class LCommandHandler extends ListenerAdapter {
             event.reply("You can only have 3 event preparations at once!").setEphemeral(true).queue();
             return;
         }
-            event.deferReply().setEphemeral(true).queue();
+        event.deferReply().setEphemeral(true).queue();
         PrivateChannel channel = event.getUser().openPrivateChannel().complete();
         Message message = channel.sendMessageEmbeds(PrepareEmbed.eventSetup(event.getChannel())).addComponents(PrepareEmbed.eventSetupActionRow(false)).complete();
         PreparedEvent prep = PreparedEvent.getPreparation(message);

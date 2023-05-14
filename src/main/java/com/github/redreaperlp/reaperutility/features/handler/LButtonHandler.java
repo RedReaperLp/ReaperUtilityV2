@@ -30,9 +30,8 @@ public class LButtonHandler extends ListenerAdapter {
                 event.deferEdit().queue();
             }
             case CANCEL -> {
-                event.reply("Cancelling...").queue();
                 PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
-                prepEvent.cancel(event);
+                prepEvent.cancel(event.getChannel());
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
                 rUser.setCurrentEditor(null);
                 try {

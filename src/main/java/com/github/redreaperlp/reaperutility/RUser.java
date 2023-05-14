@@ -35,7 +35,9 @@ public class RUser {
     }
 
     public void decreasePrepCount() {
-        currentEditorCount--;
+        if (currentEditorCount > 0) {
+            currentEditorCount--;
+        }
     }
 
     public int getPrepCount() {
