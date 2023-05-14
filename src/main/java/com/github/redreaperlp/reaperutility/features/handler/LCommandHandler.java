@@ -42,9 +42,14 @@ public class LCommandHandler extends ListenerAdapter {
         }
     }
 
+    List<Long> clearingChannels = new ArrayList<>();
     private void clear(SlashCommandInteractionEvent event) {
+        if (clearingChannels.contains(event.getChannel().getIdLong())) {
+            event.reply("Please wait until the current clear command is finished").setEphemeral(true).queue();
+            return;
+        }
+        clearingChannels.add(event.getChannel().getIdLong());
         new Thread(() -> {
-
             event.deferReply().setEphemeral(true).queue();
             long timestamp = System.currentTimeMillis();
             int cleared = 0;
@@ -105,6 +110,7 @@ public class LCommandHandler extends ListenerAdapter {
                         }
                     }
                     if (toDel.size() == 0) {
+                        clearingChannels.remove(event.getChannel().getIdLong());
                         event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
                         return;
                     }
@@ -116,6 +122,7 @@ public class LCommandHandler extends ListenerAdapter {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            clearingChannels.remove(event.getChannel().getIdLong());
             event.getHook().sendMessage("Cleared " + cleared + " messages in " + (System.currentTimeMillis() - timestamp) + "ms").queue();
         }).start();
     }
