@@ -14,13 +14,13 @@ public class LButtonHandler extends ListenerAdapter {
         ButtonKey key = ButtonKey.getByName(event.getButton().getId());
         switch (key) {
             case COMPLETE, UNKNOWN, HELP -> {
-                PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
+                PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 prepEvent.complete();
                 System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(prepEvent));
                 event.deferEdit().queue();
             }
             case SELECT -> {
-                PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
+                PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
                 if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prepEvent.getEditorId()) {
                     event.reply("You are already editing this event!").queue();
@@ -30,7 +30,7 @@ public class LButtonHandler extends ListenerAdapter {
                 event.deferEdit().queue();
             }
             case CANCEL -> {
-                PreparedEvent prepEvent = PreparedEvent.getPreparation(event.getMessage());
+                PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 prepEvent.cancel(event.getChannel());
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
                 rUser.setCurrentEditor(null);

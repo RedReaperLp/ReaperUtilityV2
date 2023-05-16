@@ -1,12 +1,14 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
+import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
-import net.dv8tion.jda.api.entities.Member;
+import com.github.redreaperlp.reaperutility.features.event.Scheduler;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -18,13 +20,17 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static com.github.redreaperlp.reaperutility.features.handler.LCommandHandler.ECommands.EGlobalCommands;
 import static com.github.redreaperlp.reaperutility.features.handler.LCommandHandler.ECommands.EGuildCommands;
 
 public class LCommandHandler extends ListenerAdapter {
+//    @Override
+//    public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
+//        event.getGuild().kickVoiceMember(event.getMember()).queue();
+//    }
+
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (event.isGlobalCommand()) {
@@ -78,61 +84,44 @@ public class LCommandHandler extends ListenerAdapter {
                     if (amount > 100) {
                         amount = 100;
                     }
-                    //TODO LOOKUP, Heres something weird
+
                     List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
                     List<Message> toDel = new ArrayList<>();
-                    for (Message message : messages) {
-                        if (event.isFromGuild()) {
-                            if (userId != 0) {
-                                if (message.getAuthor().getIdLong() == userId) {
-                                    toDel.add(message);
-                                    cleared++;
-                                }
-                            } else if (roleId != 0) {
-                                Member member = Objects.requireNonNull(event.getGuild()).getMember(message.getAuthor());
-                                if (member == null) {
-                                    member = event.getGuild().retrieveMember(message.getAuthor()).complete();
-                                }
-                                for (Role role : member.getRoles()) {
-                                    if (role.getIdLong() == roleId) {
+                    if (event.isFromGuild()) {
+                        for (Message message : messages) {
+                            if (message.getAuthor().getIdLong() == Main.jda.getSelfUser().getIdLong()) {
+                                if (message.getEmbeds().size() == 0) {
+                                    if (checkMessage(userId, roleId, message, true)) {
                                         toDel.add(message);
-                                        cleared++;
+                                    }
+                                } else {
+                                    if (Scheduler.hasEvent(message.getIdLong())) {
+                                        continue;
+                                    }
+                                    if (checkMessage(userId, roleId, message, true)) {
+                                        toDel.add(message);
                                     }
                                 }
                             } else {
-                                toDel.add(message);
-                                cleared++;
-                            }
-                        } else {
-                            if (message.getAuthor().isBot()) {
-                                if (message.getEmbeds().size() == 0) {
+                                if (checkMessage(userId, roleId, message, true)) {
                                     toDel.add(message);
-                                    cleared++;
-                                } else if (message.getEmbeds().get(0).getTitle().contains("Event Setup")) {
-                                    RUser rUser = RUser.getUser(event.getUser().getIdLong());
-                                    PreparedEvent prep = PreparedEvent.getPreparation(message);
-                                    if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prep.getEditorId()) {
-                                        prep.cancel(event.getUser().openPrivateChannel().complete());
-                                        cleared++;
-                                    } else {
-                                        toDel.add(message);
-                                        cleared++;
-                                    }
-                                    rUser.decreasePrepCount();
                                 }
                             }
                         }
-                        if (cleared == 0) {
-                            clearingChannels.remove(event.getChannel().getIdLong());
-                            event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
-                            return;
-                        }
-                        if (toDel.size() != 0) {
-                            List<CompletableFuture<Void>> future = event.getChannel().purgeMessages(toDel);
-                            for (CompletableFuture<Void> voidCompletableFuture : future) {
-                                voidCompletableFuture.join();
+                    } else {
+                        for (Message message : messages) {
+                            if (message.getAuthor().isBot()) {
+                                if (PreparedEvent.hasPreparation(message.getIdLong())) {
+                                    continue;
+                                }
+                                toDel.add(message);
                             }
                         }
+                    }
+                    cleared = toDel.size();
+                    List<CompletableFuture<Void>> futures = event.getChannel().purgeMessages(toDel);
+                    for (CompletableFuture<Void> future : futures) {
+                        future.join();
                     }
                 }
             } catch (Exception e) {
@@ -143,19 +132,38 @@ public class LCommandHandler extends ListenerAdapter {
         }).start();
     }
 
+    public boolean checkMessage(long userId, long roleId, Message message, boolean isFromGuild) {
+        if (isFromGuild) {
+            if (userId != 0) {
+                if (message.getAuthor().getIdLong() != userId) {
+                    return false;
+                }
+            }
+            if (roleId != 0) {
+                List<Role> roles = message.getMember().getRoles();
+                for (Role role : roles) {
+                    if (role.getIdLong() == roleId) {
+                        return true;
+                    }
+                }
+            }
+        } else {
+            if (message.getAuthor().isBot()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void event(SlashCommandInteractionEvent event) {
         RUser rUser = RUser.getUser(event.getUser().getIdLong());
-        if (rUser.getPrepCount() >= 3) {
-            event.reply("You can only have 3 event preparations at once!").setEphemeral(true).queue();
-            return;
-        }
+
         event.deferReply().setEphemeral(true).queue();
         PrivateChannel channel = event.getUser().openPrivateChannel().complete();
         Message message = channel.sendMessageEmbeds(PrepareEmbed.eventSetup(event.getChannel())).addComponents(PrepareEmbed.eventSetupActionRow(false)).complete();
-        PreparedEvent prep = PreparedEvent.getPreparation(message);
+        PreparedEvent prep = PreparedEvent.hasPreparation(message);
         event.getHook().sendMessage("I have sent you a private [message](" + message.getJumpUrl() + ") to configure your event!").queue();
         rUser.setCurrentEditor(prep);
-        rUser.increasePrepCount();
     }
 
     public static class ECommands {

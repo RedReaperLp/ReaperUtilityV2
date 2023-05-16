@@ -2,6 +2,7 @@ package com.github.redreaperlp.reaperutility;
 
 import ch.qos.logback.classic.Logger;
 import com.github.redreaperlp.reaperutility.database.Database;
+import com.github.redreaperlp.reaperutility.features.event.Scheduler;
 import com.github.redreaperlp.reaperutility.features.handler.*;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
 import com.github.redreaperlp.reaperutility.util.Color;
@@ -12,6 +13,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
@@ -21,6 +23,9 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +36,8 @@ public class Main {
     public static JSettings settings;
     public static JDA jda;
     public static Database database;
+    public static ZoneId zoneId = ZoneId.of("Europe/Berlin");
+    public static ZoneOffset zoneOffset = zoneId.getRules().getOffset(Instant.now());
 
 
     public static void main(String[] args) {
@@ -47,6 +54,7 @@ public class Main {
                 .appendLine("---------------------------------", Color.GREEN).printInfo();
         database = new Database();
         main.start();
+        jda.getGuildById(811512247380606996L).getRoleById(1073213897093435412L).getManager().setHoisted(false).queue();
     }
 
     public static void exit() {
@@ -68,7 +76,7 @@ public class Main {
 
         JDABuilder builder = JDABuilder.createDefault(jdaSettings.token())
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .setActivity(Activity.of(jdaSettings.activity(), jdaSettings.activityText()))
+                .setActivity(Activity.of(jdaSettings.activity(), jdaSettings.activityText(), "https://redreaperlp.github.io/").asRichPresence())
                 .setStatus(jdaSettings.status());
         enableIntents(builder);
         enableListeners(builder);
@@ -89,6 +97,7 @@ public class Main {
             exit();
         }
         enableCommands();
+        Scheduler.rescheduleAllEvents();
         new Color.Print("------------------------------------------", Color.GREEN)
                 .appendLine(" Bot Started, entering main functionality", Color.GREEN)
                 .appendLine("------------------------------------------", Color.GREEN).printInfo();

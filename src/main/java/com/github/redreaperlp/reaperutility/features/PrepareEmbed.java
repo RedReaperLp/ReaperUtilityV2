@@ -20,8 +20,7 @@ import java.util.List;
 public class PrepareEmbed {
     public static MessageEmbed eventSetup(MessageChannel channel) {
         LocalDateTime currentDateTime = LocalDateTime.now();
-        ZoneId zone = ZoneId.of("Europe/Berlin");
-        ZonedDateTime zonedDateTime = currentDateTime.atZone(zone);
+        ZonedDateTime zonedDateTime = currentDateTime.atZone(Main.zoneId);
         Instant instant = zonedDateTime.toInstant().plusSeconds(60 * 10);
 
         return new EmbedBuilder()
@@ -48,8 +47,8 @@ public class PrepareEmbed {
         if (event.getLocation() != null) {
             builder.addField(FieldKey.LOCATION.key, event.getLocation(), false);
         }
-        builder.addField(FieldKey.DATE.key, "<t:" + (event.getDate()) + ":f>", false);
-        builder.addField(FieldKey.REMAINING.key, "<t:" + (event.getDate()) + ":R>", false);
+        builder.addField(FieldKey.DATE.key, "<t:" + (event.getDateAsEpoch()) + ":f>", false);
+        builder.addField(FieldKey.REMAINING.key, "<t:" + (event.getDateAsEpoch()) + ":R>", false);
         builder.addField(FieldKey.ACCEPTED.key, "-", true);
         builder.addField(FieldKey.DECLINED.key, "-", true);
         builder.addField(FieldKey.UNSURE.key, "-", true);

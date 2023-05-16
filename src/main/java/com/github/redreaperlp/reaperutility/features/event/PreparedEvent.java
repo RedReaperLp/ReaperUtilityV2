@@ -2,7 +2,7 @@ package com.github.redreaperlp.reaperutility.features.event;
 
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
-import com.github.redreaperlp.reaperutility.settings.JSettings;
+import com.github.redreaperlp.reaperutility.util.Color;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -11,15 +11,15 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class PreparedEvent {
     static List<PreparedEvent> preparations = new ArrayList<>();
+    static List<PreparedEvent> forgettablePreparations = new ArrayList<>();
     private String name;
     private String description;
     private String location;
@@ -28,10 +28,16 @@ public class PreparedEvent {
     private long[] targetMessage;
 
     private long editorId;
+    private int timeUntilForget = 180;
+    private static Thread dumpThread;
 
 
     public PreparedEvent(long editorId) {
         this.editorId = editorId;
+    }
+
+    public static boolean hasPreparation(long idLong) {
+        return preparations.stream().anyMatch(preparedEvent -> preparedEvent.getEditorId() == idLong);
     }
 
     public void setName(String name) {
@@ -83,8 +89,12 @@ public class PreparedEvent {
         return location;
     }
 
-    public long getDate() {
-        return date;
+    public LocalDateTime getDate() {
+        return LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset);
+    }
+
+    public long getDateAsEpoch() {
+        return getDate().toEpochSecond(Main.zoneOffset);
     }
 
     public String getNotification() {
@@ -149,30 +159,21 @@ public class PreparedEvent {
         Guild tarGuild = Objects.requireNonNull(Main.jda.getGuildById(targetMessage[0]));
         MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
         targetMessage[2] = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this)).complete().getIdLong();
-        Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], date));
-        insertToDatabase();
+        Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset)));
         preparations.remove(this);
     }
 
-    private void insertToDatabase() {
-        try (Connection con = Main.database.getConnection()) {
-            PreparedStatement stmt = con.prepareStatement("INSERT INTO " + Main.settings.databaseSettings().getDatabase() + "." + Main.settings.databaseSettings().getTable(JSettings.JTable.ITables.EVENTS) + " (guildId, channelId, messageId, date) VALUES (?, ?, ?, ?)");
-            stmt.setLong(1, targetMessage[0]);
-            stmt.setLong(2, targetMessage[1]);
-            stmt.setLong(3, targetMessage[2]);
-            stmt.setLong(4, date);
-            stmt.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public int countDown() {
+        return timeUntilForget--;
     }
 
     /**
      * Returns the preparation of the message
+     *
      * @param message the message (Must contain an embed with the information needed)
      * @return the preparation of the message
      */
-    public static PreparedEvent getPreparation(Message message) {
+    public static PreparedEvent hasPreparation(Message message) {
         for (PreparedEvent preparation : preparations) {
             if (preparation.getEditorId() == message.getIdLong()) {
                 return preparation;
@@ -195,6 +196,40 @@ public class PreparedEvent {
                 case EVENT_CHANNEL -> preparation.setEventChannel(field.getValue());
             }
         }
+        preparations.add(preparation);
         return preparation;
+    }
+
+    /**
+     * Starts a thread that removes the preparation after {@value timeUntilForget} seconds to free up memory
+     */
+    public void forgettable() {
+        forgettablePreparations.add(this);
+        if (dumpThread == null || !dumpThread.isAlive()) {
+            dumpThread = new Thread(() -> {
+                new Color.Print("Prepared Events Dump Thread started").printDebug();
+                while (!forgettablePreparations.isEmpty()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    List<PreparedEvent> toRemove = new ArrayList<>();
+                    for (PreparedEvent preparation : forgettablePreparations) {
+                        if (preparation.countDown() <= 0) {
+                            toRemove.add(preparation);
+                        }
+                    }
+                    forgettablePreparations.removeAll(toRemove);
+                    preparations.removeAll(toRemove);
+                }
+                new Color.Print("Prepared Events Dump Thread stopped").printDebug();
+            });
+            dumpThread.start();
+        }
+    }
+
+    public static void removePreparation(PreparedEvent preparation) {
+        preparations.remove(preparation);
     }
 }
