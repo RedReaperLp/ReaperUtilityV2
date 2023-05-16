@@ -78,7 +78,7 @@ public class LCommandHandler extends ListenerAdapter {
                     if (amount > 100) {
                         amount = 100;
                     }
-
+                    //TODO LOOKUP, Heres something weird
                     List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
                     List<Message> toDel = new ArrayList<>();
                     for (Message message : messages) {

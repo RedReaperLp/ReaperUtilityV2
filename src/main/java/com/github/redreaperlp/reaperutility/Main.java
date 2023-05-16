@@ -30,6 +30,7 @@ public class Main {
     public static boolean exitOnAnyKey = false;
     public static JSettings settings;
     public static JDA jda;
+    public static Database database;
 
 
     public static void main(String[] args) {
@@ -44,7 +45,7 @@ public class Main {
         new Color.Print("---------------------------------", Color.GREEN)
                 .appendLine(" Etablishing Database Connection", Color.GREEN)
                 .appendLine("---------------------------------", Color.GREEN).printInfo();
-        new Database();
+        database = new Database();
         main.start();
     }
 

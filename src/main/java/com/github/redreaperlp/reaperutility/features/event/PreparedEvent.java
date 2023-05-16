@@ -2,6 +2,7 @@ package com.github.redreaperlp.reaperutility.features.event;
 
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
+import com.github.redreaperlp.reaperutility.settings.JSettings;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
@@ -9,8 +10,10 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -147,7 +150,21 @@ public class PreparedEvent {
         MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
         targetMessage[2] = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this)).complete().getIdLong();
         Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], date));
+        insertToDatabase();
         preparations.remove(this);
+    }
+
+    private void insertToDatabase() {
+        try (Connection con = Main.database.getConnection()) {
+            PreparedStatement stmt = con.prepareStatement("INSERT INTO " + Main.settings.databaseSettings().getDatabase() + "." + Main.settings.databaseSettings().getTable(JSettings.JTable.ITables.EVENTS) + " (guildId, channelId, messageId, date) VALUES (?, ?, ?, ?)");
+            stmt.setLong(1, targetMessage[0]);
+            stmt.setLong(2, targetMessage[1]);
+            stmt.setLong(3, targetMessage[2]);
+            stmt.setLong(4, date);
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

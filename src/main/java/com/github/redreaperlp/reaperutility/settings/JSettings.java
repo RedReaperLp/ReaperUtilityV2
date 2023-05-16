@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -157,6 +158,15 @@ public class JSettings {
             return host != null && port != null && user != null && password != null && database != null && tables != null;
         }
 
+        public String getTable(JTable.ITables table) {
+            for (JTable jtable : tables) {
+                if (jtable.getTable() == table) {
+                    return jtable.getName();
+                }
+            }
+            return null;
+        }
+
         public String getUsername() {
             return user;
         }
@@ -240,19 +250,19 @@ public class JSettings {
 
         public enum ITables {
             GUILDS("guilds", "(" +
-                    "id VARCHAR(18) NOT NULL PRIMARY KEY," +
+                    "id BIGINT(22) NOT NULL PRIMARY KEY," +
                     "name VARCHAR(100) NOT NULL," +
                     "next_event_start JSON," +
                     "permissions JSON," +
                     "users JSON" +
                     ")"),
             EVENTS("events", "(" +
-                    "id VARCHAR(18) NOT NULL PRIMARY KEY," +
-                    "server_id VARCHAR(18) NOT NULL," +
-                    "start DATETIME NOT NULL" +
+                    "messageId BIGINT(22) NOT NULL PRIMARY KEY," +
+                    "guildId BIGINT(22) NOT NULL," +
+                    "channelId BIGINT(22) NOT NULL," +
+                    "date BIGINT(15) NOT NULL" +
                     ")"),
             ;
-
             private final String name;
             private final String statement;
 
@@ -267,6 +277,15 @@ public class JSettings {
 
             public String getStatement() {
                 return statement;
+            }
+
+            public static ITables getTable(String name) {
+                for (ITables table : values()) {
+                    if (table.getName().equalsIgnoreCase(name)) {
+                        return table;
+                    }
+                }
+                return null;
             }
         }
     }
