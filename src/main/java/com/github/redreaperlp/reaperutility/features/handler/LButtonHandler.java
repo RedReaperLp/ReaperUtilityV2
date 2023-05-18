@@ -16,18 +16,21 @@ public class LButtonHandler extends ListenerAdapter {
             case COMPLETE, UNKNOWN, HELP -> {
                 PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 prepEvent.complete();
-                System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(prepEvent));
                 event.deferEdit().queue();
             }
             case SELECT -> {
                 PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
-                if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prepEvent.getEditorId()) {
-                    event.reply("You are already editing this event!").queue();
-                    return;
+                if (!rUser.getRateLimit().addIsRateLimited(3)) {
+                    if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prepEvent.getEditorId()) {
+                        event.reply("You are already editing this event!").queue();
+                        return;
+                    }
+                    rUser.setCurrentEditor(prepEvent);
+                    event.deferEdit().queue();
+                } else {
+                    event.reply("You are rate limited for " + rUser.getRateLimit().getDiscordFormattedRemaining()).queue();
                 }
-                rUser.setCurrentEditor(prepEvent);
-                event.deferEdit().queue();
             }
             case CANCEL -> {
                 PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());

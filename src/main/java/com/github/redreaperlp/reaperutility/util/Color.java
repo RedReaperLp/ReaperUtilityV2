@@ -2,9 +2,7 @@ package com.github.redreaperlp.reaperutility.util;
 
 import com.github.redreaperlp.reaperutility.Main;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -19,6 +17,7 @@ public enum Color {
     PURPLE("\u001B[35m"),
     CYAN("\u001B[36m"),
     GRAY("\u001B[38;5;240m"),
+    LIGHT_GRAY("\u001B[38;5;245m"),
     WHITE("\u001B[37m"),
     RESET("\u001B[0m");
 

@@ -16,6 +16,7 @@ public class Event {
     private long channelId;
     private long messageId;
     private LocalDateTime timestamp;
+    private Scheduler.EventSchduler currentScheduler;
 
     public Event(long guildId, long channelId, long messageId, LocalDateTime timestamp) {
         this.guildId = guildId;
@@ -107,5 +108,9 @@ public class Event {
     public void fire() {
         System.out.println("Fired event");
         removeFromDatabase();
+    }
+
+    public void setCurrentScheduler(Scheduler.EventSchduler scheduler) {
+        this.currentScheduler = scheduler;
     }
 }

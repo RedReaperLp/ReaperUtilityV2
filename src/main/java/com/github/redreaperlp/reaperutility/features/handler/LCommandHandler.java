@@ -8,7 +8,6 @@ import com.github.redreaperlp.reaperutility.features.event.Scheduler;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -55,9 +54,14 @@ public class LCommandHandler extends ListenerAdapter {
             event.reply("Please wait until the current clear command is finished").setEphemeral(true).queue();
             return;
         }
+        RUser rUser = RUser.getUser(event.getUser().getIdLong());
+        if (rUser.getRateLimit().addIsRateLimited(8)) {
+            event.reply("You are rate limited, please wait " + rUser.getRateLimit().getDiscordFormattedRemaining()).setEphemeral(true).queue();
+            return;
+        }
         clearingChannels.add(event.getChannel().getIdLong());
+        event.deferReply().setEphemeral(true).queue();
         new Thread(() -> {
-            event.deferReply().setEphemeral(true).queue();
             long timestamp = System.currentTimeMillis();
             int cleared = 0;
             try {
@@ -79,51 +83,52 @@ public class LCommandHandler extends ListenerAdapter {
 
                 if (amount == 0) {
                     event.replyEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                    clearingChannels.remove(event.getChannel().getIdLong());
                     return;
-                } else {
-                    if (amount > 100) {
-                        amount = 100;
-                    }
+                }
+                if (!event.isFromGuild() && amount > 20) {
+                    amount = 20;
+                }
+                if (amount > 100) {
+                    amount = 100;
+                }
 
-                    List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
-                    List<Message> toDel = new ArrayList<>();
-                    if (event.isFromGuild()) {
-                        for (Message message : messages) {
-                            if (message.getAuthor().getIdLong() == Main.jda.getSelfUser().getIdLong()) {
-                                if (message.getEmbeds().size() == 0) {
-                                    if (checkMessage(userId, roleId, message, true)) {
-                                        toDel.add(message);
-                                    }
-                                } else {
-                                    if (Scheduler.hasEvent(message.getIdLong())) {
-                                        continue;
-                                    }
-                                    if (checkMessage(userId, roleId, message, true)) {
-                                        toDel.add(message);
-                                    }
-                                }
-                            } else {
-                                if (checkMessage(userId, roleId, message, true)) {
-                                    toDel.add(message);
-                                }
-                            }
+                List<Message> messages = event.getChannel().getHistory().retrievePast(amount).complete();
+                if (messages.size() == 0) {
+                    event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                    clearingChannels.remove(event.getChannel().getIdLong());
+                    return;
+                }
+                List<Message> toDel = new ArrayList<>();
+                if (event.isFromGuild()) {
+                    for (Message message : messages) {
+                        if (message.getAuthor().getIdLong() == Main.jda.getSelfUser().getIdLong() && message.getEmbeds().size() > 0 && Scheduler.hasEvent(message.getIdLong())) {
+                            continue;
                         }
-                    } else {
-                        for (Message message : messages) {
-                            if (message.getAuthor().isBot()) {
-                                if (PreparedEvent.hasPreparation(message.getIdLong())) {
-                                    continue;
-                                }
-                                toDel.add(message);
-                            }
+                        if (checkMessage(userId, roleId, message, true)) {
+                            toDel.add(message);
                         }
                     }
-                    cleared = toDel.size();
+                } else {
+                    for (Message message : messages) {
+                        if (message.getAuthor().isBot() && !PreparedEvent.hasPreparation(message.getIdLong())) {
+                            toDel.add(message);
+                        }
+                    }
+                }
+
+                cleared = toDel.size();
+                if (toDel.size() > 0) {
                     List<CompletableFuture<Void>> futures = event.getChannel().purgeMessages(toDel);
                     for (CompletableFuture<Void> future : futures) {
                         future.join();
                     }
+                } else {
+                    event.getHook().sendMessageEmbeds(PrepareEmbed.noMessagesToClear()).queue();
+                    clearingChannels.remove(event.getChannel().getIdLong());
+                    return;
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -168,7 +173,7 @@ public class LCommandHandler extends ListenerAdapter {
 
     public static class ECommands {
         public enum EGlobalCommands {
-            CLEAR("clear", "Clears up to 100 messages at once", Command.Type.SLASH,
+            CLEAR("clear", "Clears up to 100 messages at once (In private up to 20)", Command.Type.SLASH,
                     new CommandOption(OptionType.INTEGER, "amount", "The amount of messages to be cleared", true, false),
                     new CommandOption(OptionType.USER, "user", "The user whose messages should be cleared"),
                     new CommandOption(OptionType.ROLE, "role", "The role whose messages should be cleared")),

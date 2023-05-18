@@ -10,10 +10,12 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import org.w3c.dom.css.RGBColor;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,9 +28,10 @@ public class PreparedEvent {
     private long date;
     private String notification;
     private long[] targetMessage;
+    private int[] color = new int[]{0, 255, 0};
 
     private long editorId;
-    private int timeUntilForget = 180;
+    private int timeUntilForget = 50;
     private static Thread dumpThread;
 
 
@@ -147,6 +150,7 @@ public class PreparedEvent {
         if (targetMessage != null) {
             builder.addField(PrepareEmbed.FieldKey.EVENT_CHANNEL.key(), "<#" + targetMessage[1] + ">", false);
         }
+        builder.setColor(java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2])));
         message.editMessageEmbeds(builder.build()).queue();
     }
 
@@ -176,6 +180,7 @@ public class PreparedEvent {
     public static PreparedEvent hasPreparation(Message message) {
         for (PreparedEvent preparation : preparations) {
             if (preparation.getEditorId() == message.getIdLong()) {
+                forgettablePreparations.remove(preparation);
                 return preparation;
             }
         }
@@ -204,6 +209,7 @@ public class PreparedEvent {
      * Starts a thread that removes the preparation after {@value timeUntilForget} seconds to free up memory
      */
     public void forgettable() {
+        timeUntilForget = 50;
         forgettablePreparations.add(this);
         if (dumpThread == null || !dumpThread.isAlive()) {
             dumpThread = new Thread(() -> {

@@ -2,24 +2,27 @@ package com.github.redreaperlp.reaperutility;
 
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import com.github.redreaperlp.reaperutility.util.Color;
+import com.github.redreaperlp.reaperutility.util.RateLimit;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RUser {
-    private static List<RUser> rUsers = new ArrayList<>();
+    private static final List<RUser> rUsers = new ArrayList<>();
     private static Thread dumpThread;
 
-    private long id;
+    private final long id;
     private PreparedEvent currentEditor;
-    private int untilDelete = 180;
+    private LocalDateTime untilDelete = LocalDateTime.now().plusSeconds(180);
+    private final RateLimit rateLimit = new RateLimit();
 
     /**
      * Creates a new RUser and adds it to the list of RUsers<br>
-     * Also starts the dumpThread if it is not already running to remove unused RUsers after {@value #untilDelete} seconds
+     * Also starts the dumpThread if it is not already running to remove unused RUsers after 180 seconds
      * @param id the id of the user
      */
     public RUser(long id) {
@@ -28,19 +31,22 @@ public class RUser {
         if (dumpThread == null || !dumpThread.isAlive()) {
             dumpThread = new Thread(() -> {
                 new Color.Print("Dumping Thread started").printDebug();
+                int smallestTime = 180;
                 while (rUsers.size() > 0) {
+                    try {
+                        Thread.sleep((smallestTime > 0 ? smallestTime : 1) * 1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     List<RUser> toRemove = new ArrayList<>();
+                    smallestTime = 180;
                     for (RUser rUser : rUsers) {
-                        if (rUser.countDown() <= 0) {
+                        smallestTime = Math.min(smallestTime, (int) (rUser.untilDelete.toEpochSecond(Main.zoneOffset) - LocalDateTime.now().toEpochSecond(Main.zoneOffset)));
+                        if (rUser.deleteable()) {
                             toRemove.add(rUser);
                         }
                     }
                     toRemove.forEach(RUser::remove);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
                 }
                 new Color.Print("Dumping Thread stopped").printDebug();
             });
@@ -48,12 +54,16 @@ public class RUser {
         }
     }
 
-    private int countDown() {
-        return untilDelete--;
+    private boolean deleteable() {
+        return LocalDateTime.now().isAfter(untilDelete) && !rateLimit().isLimited();
+    }
+
+    private RateLimit rateLimit() {
+        return rateLimit;
     }
 
     private void resetCountDown() {
-        untilDelete = 180;
+        untilDelete = LocalDateTime.now().plusSeconds(180);
     }
 
     public long getId() {
@@ -69,12 +79,12 @@ public class RUser {
             PrivateChannel channel = Main.jda.getUserById(id).openPrivateChannel().complete();
             if (currentEditor != null) {
                 try {
+                    currentEditor.forgettable();
                     Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
                     if (oldMessage == null) return;
                     oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).queue();
-                    currentEditor.forgettable();
                 } catch (Exception e) {
-                    System.out.println("Could not edit old message");
+                    channel.sendMessage("Couldn't edit old message").queue();
                 }
             }
             currentEditor = newEditor;
@@ -110,10 +120,14 @@ public class RUser {
     public void remove() {
         rUsers.remove(this);
         new Thread(() -> {
-            System.out.println("Removing user " + id);
+            new Color.Print("Removing user " + id + " from cache").printDebug();
             if (currentEditor != null) {
                 setCurrentEditor(null);
             }
         }).start();
+    }
+
+    public RateLimit getRateLimit() {
+        return rateLimit;
     }
 }

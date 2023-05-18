@@ -16,11 +16,13 @@ public class LSelectionHandler extends ListenerAdapter {
         EVENT_SETUP("event.setup", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
                 SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
                 SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
-                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id)),
+                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id),
+                SelectOption.of("5️⃣Color", SelectionValue.COLOR.id)),
         EVENT_EDIT("event.edit", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
                 SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
                 SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
-                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id)),
+                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id),
+                SelectOption.of("5️⃣Color", SelectionValue.COLOR.id)),
         ;
 
         private final String id;
@@ -45,7 +47,7 @@ public class LSelectionHandler extends ListenerAdapter {
         DESCRIPTION("description"),
         DATE("date"),
         LOCATION("location"),
-        ;
+        COLOR("color");
 
         private final String id;
 
