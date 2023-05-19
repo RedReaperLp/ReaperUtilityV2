@@ -69,6 +69,10 @@ public class Scheduler {
             toSchedule.setCurrentScheduler(fiveSecondScheduler);
             fiveSecondScheduler.scheduleEvent(toSchedule);
         } else {
+            if (toSchedule.getTimestamp().isBefore(now)) {
+                toSchedule.fire();
+                return;
+            }
             new Thread(() -> {
                 try {
                     Thread.sleep(seconds * 1000L);

@@ -1,6 +1,7 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
-import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+import com.github.redreaperlp.reaperutility.RUser;
+import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
@@ -13,16 +14,7 @@ public class LSelectionHandler extends ListenerAdapter {
     }
 
     public enum SelectionKey {
-        EVENT_SETUP("event.setup", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
-                SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
-                SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
-                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id),
-                SelectOption.of("5️⃣Color", SelectionValue.COLOR.id)),
-        EVENT_EDIT("event.edit", SelectOption.of("1️⃣Name", SelectionValue.NAME.id),
-                SelectOption.of("2️⃣Description", SelectionValue.DESCRIPTION.id),
-                SelectOption.of("3️⃣Date", SelectionValue.DATE.id),
-                SelectOption.of("4️⃣Location", SelectionValue.LOCATION.id),
-                SelectOption.of("5️⃣Color", SelectionValue.COLOR.id)),
+        UNKNOWN("unknown")
         ;
 
         private final String id;
@@ -40,14 +32,24 @@ public class LSelectionHandler extends ListenerAdapter {
         public SelectOption[] options() {
             return options;
         }
+
+        public static SelectionKey getById(String id) {
+            for (SelectionKey key : values()) {
+                if (key.id().equals(id)) {
+                    return key;
+                }
+            }
+            return UNKNOWN;
+        }
     }
 
     public enum SelectionValue {
-        NAME("name"),
-        DESCRIPTION("description"),
-        DATE("date"),
-        LOCATION("location"),
-        COLOR("color");
+        NAME("event.name"),
+        DESCRIPTION("event.description"),
+        DATE("event.date"),
+        LOCATION("event.location"),
+        COLOR("event.color"),
+        UNKNOWN("unknown");
 
         private final String id;
 
@@ -57,6 +59,15 @@ public class LSelectionHandler extends ListenerAdapter {
 
         public String id() {
             return id;
+        }
+
+        public static SelectionValue getById(String id) {
+            for (SelectionValue value : values()) {
+                if (value.id().equals(id)) {
+                    return value;
+                }
+            }
+            return UNKNOWN;
         }
     }
 }

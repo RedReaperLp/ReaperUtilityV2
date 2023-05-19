@@ -2,6 +2,7 @@ package com.github.redreaperlp.reaperutility.features.event;
 
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
+import com.github.redreaperlp.reaperutility.util.Color;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -106,11 +107,15 @@ public class Event {
     }
 
     public void fire() {
-        System.out.println("Fired event");
+        new Color.Print("Event " + messageId + " in guild " + guildId + " fired!").printDebug();
         removeFromDatabase();
     }
 
     public void setCurrentScheduler(Scheduler.EventSchduler scheduler) {
         this.currentScheduler = scheduler;
+    }
+
+    public class EventReminder {
+
     }
 }

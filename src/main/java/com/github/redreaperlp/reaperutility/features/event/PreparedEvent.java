@@ -10,6 +10,10 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.interactions.components.Component;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.w3c.dom.css.RGBColor;
 
 import java.time.LocalDateTime;
@@ -32,6 +36,7 @@ public class PreparedEvent {
 
     private long editorId;
     private int timeUntilForget = 50;
+    private boolean cancelled = false;
     private static Thread dumpThread;
 
 
@@ -53,6 +58,10 @@ public class PreparedEvent {
 
     public void setLocation(String value) {
         this.location = value;
+    }
+
+    public void setDate(long dateLong) {
+        date = dateLong;
     }
 
     public void setDate(String value) {
@@ -151,12 +160,32 @@ public class PreparedEvent {
             builder.addField(PrepareEmbed.FieldKey.EVENT_CHANNEL.key(), "<#" + targetMessage[1] + ">", false);
         }
         builder.setColor(java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2])));
-        message.editMessageEmbeds(builder.build()).queue();
+        message.editMessage(MessageEditBuilder.fromMessage(message).setEmbeds(builder.build()).setComponents(PrepareEmbed.eventSetupActionRow(completePossible())).build()).queue();
+    }
+
+    public void setColor(int[] rgb) {
+        color = rgb;
+    }
+
+    public boolean completePossible() {
+        if (name == null || name.equals("Your Name")) {
+            return false;
+        } else if (LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset).isBefore(LocalDateTime.now(Main.zoneOffset))) {
+            return false;
+        } else if (LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset).isAfter(LocalDateTime.now(Main.zoneOffset).plusDays(31))) {
+            return false;
+        }
+        return true;
     }
 
     public void cancel(MessageChannel event) {
         preparations.remove(this);
+        cancelled = true;
         event.retrieveMessageById(editorId).complete().delete().queue();
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
     }
 
     public void complete() {
@@ -201,6 +230,8 @@ public class PreparedEvent {
                 case EVENT_CHANNEL -> preparation.setEventChannel(field.getValue());
             }
         }
+        int[] rgb = new int[] {embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()};
+        preparation.setColor(rgb);
         preparations.add(preparation);
         return preparation;
     }
@@ -237,5 +268,9 @@ public class PreparedEvent {
 
     public static void removePreparation(PreparedEvent preparation) {
         preparations.remove(preparation);
+    }
+
+    public java.awt.Color color() {
+        return java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2]));
     }
 }

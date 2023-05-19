@@ -3,13 +3,11 @@ package com.github.redreaperlp.reaperutility.features;
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import com.github.redreaperlp.reaperutility.features.handler.LButtonHandler;
-import com.github.redreaperlp.reaperutility.features.handler.LSelectionHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -46,12 +44,13 @@ public class PrepareEmbed {
         if (event.getLocation() != null) {
             builder.addField(FieldKey.LOCATION.key, event.getLocation(), false);
         }
-        builder.addField(FieldKey.DATE.key, "<t:" + (event.getDateAsEpoch()) + ":f>", false);
-        builder.addField(FieldKey.REMAINING.key, "<t:" + (event.getDateAsEpoch()) + ":R>", false);
-        builder.addField(FieldKey.ACCEPTED.key, "-", true);
-        builder.addField(FieldKey.DECLINED.key, "-", true);
-        builder.addField(FieldKey.UNSURE.key, "-", true);
-        builder.setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png");
+        builder.addField(FieldKey.DATE.key, "<t:" + (event.getDateAsEpoch()) + ":f>", false)
+                .addField(FieldKey.REMAINING.key, "<t:" + (event.getDateAsEpoch()) + ":R>", false)
+                .addField(FieldKey.ACCEPTED.key, "-", true)
+                .addField(FieldKey.DECLINED.key, "-", true)
+                .addField(FieldKey.UNSURE.key, "-", true)
+                .setColor(event.color())
+                .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png");
         return builder.build();
     }
 
@@ -60,14 +59,11 @@ public class PrepareEmbed {
                 ActionRow.of(
                         LButtonHandler.ButtonKey.COMPLETE.getButton().withDisabled(!completeEnabled),
                         LButtonHandler.ButtonKey.CANCEL.getButton(),
-                        LButtonHandler.ButtonKey.SELECT.getButton(),
-                        LButtonHandler.ButtonKey.HELP.getButton()
+                        LButtonHandler.ButtonKey.SELECT.getButton()
                 ),
                 ActionRow.of(
-                        StringSelectMenu.create(LSelectionHandler.SelectionKey.EVENT_SETUP.id())
-                                .addOptions(LSelectionHandler.SelectionKey.EVENT_SETUP.options())
-                                .setPlaceholder("Select a field to edit")
-                                .build()
+                        LButtonHandler.ButtonKey.ENTER_INFOS.getButton(),
+                        LButtonHandler.ButtonKey.EVENT_HELP_1.getButton()
                 )
         );
     }

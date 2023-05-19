@@ -63,7 +63,7 @@ public class RUser {
     }
 
     private void resetCountDown() {
-        untilDelete = LocalDateTime.now().plusSeconds(180);
+        untilDelete = LocalDateTime.now().plusSeconds(10);
     }
 
     public long getId() {
@@ -77,7 +77,7 @@ public class RUser {
     public void setCurrentEditor(PreparedEvent newEditor) {
         try {
             PrivateChannel channel = Main.jda.getUserById(id).openPrivateChannel().complete();
-            if (currentEditor != null) {
+            if (currentEditor != null && !currentEditor.isCancelled()) {
                 try {
                     currentEditor.forgettable();
                     Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
