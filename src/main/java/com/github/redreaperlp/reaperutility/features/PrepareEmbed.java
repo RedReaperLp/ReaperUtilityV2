@@ -1,6 +1,7 @@
 package com.github.redreaperlp.reaperutility.features;
 
 import com.github.redreaperlp.reaperutility.Main;
+import com.github.redreaperlp.reaperutility.features.event.Event;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import com.github.redreaperlp.reaperutility.features.handler.LButtonHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -36,22 +37,56 @@ public class PrepareEmbed {
                 .build();
     }
 
-    public static MessageEmbed eventCompleted(PreparedEvent event) {
-        EmbedBuilder builder = new EmbedBuilder().setTitle(event.getName());
-        if (event.getDescription() != null && !event.getDescription().equalsIgnoreCase("your description")) {
-            builder.setDescription(event.getDescription());
+    public static MessageEmbed eventEdit(PreparedEvent event) {
+        EmbedBuilder builder = new EmbedBuilder()
+                .setTitle("Event Setup", "https://discord.com/channels/" + event.getTargetMessage()[0] + "/" + event.getTargetMessage()[1] + "/" + event.getTargetMessage()[2]);
+        builder.addField(FieldKey.NAME.key, event.getName(), false);
+        if (event.getDescription() != null) {
+            builder.addField(FieldKey.DESCRIPTION.key, event.getDescription(), false);
         }
         if (event.getLocation() != null) {
             builder.addField(FieldKey.LOCATION.key, event.getLocation(), false);
         }
         builder.addField(FieldKey.DATE.key, "<t:" + (event.getDateAsEpoch()) + ":f>", false)
                 .addField(FieldKey.REMAINING.key, "<t:" + (event.getDateAsEpoch()) + ":R>", false)
-                .addField(FieldKey.ACCEPTED.key, "-", true)
+                .setColor(event.color())
+                .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png")
+                .setFooter("Stuck? Click on the ❓ button to get help!")
+                .setTimestamp(Instant.now());
+        return builder.build();
+    }
+
+    public static MessageEmbed eventCompleted(PreparedEvent event) {
+        EmbedBuilder builder = addFields(event);
+        builder.addField(FieldKey.ACCEPTED.key, "-", true)
                 .addField(FieldKey.DECLINED.key, "-", true)
                 .addField(FieldKey.UNSURE.key, "-", true)
                 .setColor(event.color())
                 .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png");
         return builder.build();
+    }
+
+    public static MessageEmbed eventCompleted(PreparedEvent preparedEvent, Event event) {
+        EmbedBuilder builder = addFields(preparedEvent);
+        builder.addField(FieldKey.ACCEPTED.key, event.getAcceptedString(), true)
+                .addField(FieldKey.DECLINED.key, event.getDeclinedString(), true)
+                .addField(FieldKey.UNSURE.key, event.getUndecidedString(), true)
+                .setColor(preparedEvent.color())
+                .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084910078680895519/Event_Icon.png");
+        return builder.build();
+    }
+
+    private static EmbedBuilder addFields(PreparedEvent preparedEvent) {
+        EmbedBuilder builder = new EmbedBuilder().setTitle(preparedEvent.getName());
+        if (preparedEvent.getDescription() != null && !preparedEvent.getDescription().equalsIgnoreCase("your description")) {
+            builder.setDescription(preparedEvent.getDescription());
+        }
+        if (preparedEvent.getLocation() != null) {
+            builder.addField(FieldKey.LOCATION.key, preparedEvent.getLocation(), false);
+        }
+        builder.addField(FieldKey.DATE.key, "<t:" + (preparedEvent.getDateAsEpoch()) + ":f>", false)
+                .addField(FieldKey.REMAINING.key, "<t:" + (preparedEvent.getDateAsEpoch()) + ":R>", false);
+        return builder;
     }
 
     public static ActionRow eventHelpActionRow(boolean prevEnabled, boolean nextEnabled) {
@@ -71,6 +106,20 @@ public class PrepareEmbed {
                 ActionRow.of(
                         LButtonHandler.ButtonKey.ENTER_INFOS.getButton(),
                         LButtonHandler.ButtonKey.EVENT_HELP.getButton()
+                )
+        );
+    }
+
+    public static List<ActionRow> eventEditActionRow(boolean completeEnabled) {
+        return List.of(
+                ActionRow.of(
+                        LButtonHandler.ButtonKey.COMPLETE.getButton().withDisabled(!completeEnabled),
+                        LButtonHandler.ButtonKey.CANCEL.getButton(),
+                        LButtonHandler.ButtonKey.SELECT.getButton()
+                ),
+                ActionRow.of(
+                        LButtonHandler.ButtonKey.ENTER_INFOS.getButton(),
+                        LButtonHandler.ButtonKey.EVENT_HELP_EDIT.getButton()
                 )
         );
     }
@@ -96,6 +145,19 @@ public class PrepareEmbed {
                 .setThumbnail("https://cdn.discordapp.com/attachments/1084909692037373992/1084909806348939365/Error.png")
                 .setAuthor(Main.jda.getSelfUser().getName(), "https://discord.gg/ghhKXDGQhD", Main.jda.getSelfUser().getEffectiveAvatarUrl())
                 .build();
+    }
+
+    public static List<ActionRow> eventActionRow() {
+        return List.of(
+                ActionRow.of(
+                        LButtonHandler.ButtonKey.EVENT_ACCEPT.getButton(),
+                        LButtonHandler.ButtonKey.EVENT_DECLINE.getButton(),
+                        LButtonHandler.ButtonKey.EVENT_UNSURE.getButton()
+                ),
+                ActionRow.of(
+                        LButtonHandler.ButtonKey.EVENT_EDIT.getButton(),
+                        LButtonHandler.ButtonKey.EVENT_DELETE.getButton()
+                ));
     }
 
     public static enum FieldKey {

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public class RateLimit {
     private LocalDateTime timestamp = LocalDateTime.now().minusSeconds(10);
+    private LocalDateTime selectCooldown = LocalDateTime.now();
     private boolean isLimited;
 
     public synchronized boolean addIsRateLimited(int impact) {
@@ -43,5 +44,12 @@ public class RateLimit {
 
     public String getDiscordFormattedRemaining() {
         return "<t:" + timestamp.toEpochSecond(Main.zoneOffset) + ":R>";
+    }
+
+    public void selectCooldown() {
+        selectCooldown = LocalDateTime.now().plusSeconds(5);
+    }
+    public boolean isSelectCooldown() {
+        return selectCooldown.isAfter(LocalDateTime.now());
     }
 }

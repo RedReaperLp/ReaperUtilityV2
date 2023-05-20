@@ -7,13 +7,13 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class PreparedEvent {
     static List<PreparedEvent> preparations = new ArrayList<>();
     static List<PreparedEvent> forgettablePreparations = new ArrayList<>();
+
     private String name;
     private String description;
     private String location;
@@ -141,7 +142,7 @@ public class PreparedEvent {
         };
     }
 
-    public MessageEditData modifyEditor(PrivateChannel channel, Message message) {
+    public MessageEditData modifyEditor(Message message) {
         EmbedBuilder builder = new EmbedBuilder(message.getEmbeds().get(0));
         builder.clearFields();
         builder.addField(PrepareEmbed.FieldKey.NAME.key(), name, false);
@@ -160,6 +161,7 @@ public class PreparedEvent {
             builder.addField(PrepareEmbed.FieldKey.EVENT_CHANNEL.key(), "<#" + targetMessage[1] + ">", false);
         }
         builder.setColor(java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2])));
+        builder.setTimestamp(Instant.now());
         return MessageEditBuilder.fromMessage(message).setEmbeds(builder.build()).setComponents(PrepareEmbed.eventSetupActionRow(completePossible())).build();
     }
 
@@ -192,6 +194,7 @@ public class PreparedEvent {
         Guild tarGuild = Objects.requireNonNull(Main.jda.getGuildById(targetMessage[0]));
         MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
         MessageCreateAction create = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this));
+        create.addComponents(PrepareEmbed.eventActionRow());
         if (notification.size() > 0) {
             String roleMentionString = notification.stream()
                     .filter(roleName -> roleName.startsWith("@"))
@@ -205,9 +208,61 @@ public class PreparedEvent {
         preparations.remove(this);
     }
 
+    /**
+     * Completes the event and edits the message
+     *
+     * @return true if the event was completed, false if the event was not found
+     */
+    public boolean completeEdit() {
+        Event event = Scheduler.getEvent(targetMessage[2]);
+        try {
+            if (event != null) {
+                Guild tarGuild = Main.jda.getGuildById(targetMessage[0]);
+                Message tarMessage = tarGuild.getTextChannelById(targetMessage[1]).retrieveMessageById(targetMessage[2]).complete();
+                tarMessage.editMessageEmbeds(PrepareEmbed.eventCompleted(this, event)).setComponents(PrepareEmbed.eventActionRow()).queue();
+                event.overwrite(this);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            event.removeFromDatabase();
+            return false;
+        }
+    }
+
 
     public int countDown() {
         return timeUntilForget--;
+    }
+
+    /**
+     * Adds a role to the notification list
+     *
+     * @param toAdd the role to add
+     * @return true if the role was added, false if it was removed
+     */
+    public boolean addRole(String toAdd) {
+        if (toAdd.equals("@everyone")) {
+            if (notification.contains("@everyone")) {
+                notification.remove("@everyone");
+                return false;
+            } else {
+                notification.clear();
+                notification.add("@everyone");
+                return true;
+            }
+        } else if (notification.contains("@everyone")) {
+            notification.remove("@everyone");
+        }
+
+        if (notification.contains("@" + toAdd)) {
+            notification.remove("@" + toAdd);
+            return false;
+        }
+
+        notification.add("@" + toAdd);
+        return true;
     }
 
     /**
@@ -223,6 +278,7 @@ public class PreparedEvent {
                 return preparation;
             }
         }
+
         return inititate(message);
     }
 
@@ -246,10 +302,42 @@ public class PreparedEvent {
         if (preparation.getNotification() == null) {
             preparation.setNotification(new ArrayList<>());
         }
-        int[] rgb = new int[] {embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()};
+        int[] rgb = new int[]{embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()};
         preparation.setColor(rgb);
+        if (embed.getUrl() != null && embed.getUrl().contains("https://discord.com/channels/")) {
+            String[] url = embed.getUrl().split("/");
+            preparation.setTargetMessage(new long[]{Long.parseLong(url[4]), Long.parseLong(url[5]), Long.parseLong(url[6])});
+        }
         preparations.add(preparation);
         return preparation;
+    }
+
+    public static PreparedEvent initFromEvent(Message event) {
+        MessageEmbed embed = event.getEmbeds().get(0);
+        PreparedEvent preparation = new PreparedEvent(event.getIdLong());
+        preparation.setTargetMessage(event);
+        preparation.setName(embed.getTitle());
+        preparation.setDescription(embed.getDescription());
+        preparation.setColor(new int[]{embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()});
+        for (MessageEmbed.Field field : embed.getFields()) {
+            switch (Objects.requireNonNull(PrepareEmbed.FieldKey.fromKey(field.getName()))) {
+                case DATE -> preparation.setDate(field.getValue());
+                case NOTIFICATION -> {
+                    List<String> notification = new ArrayList<>(Arrays.asList(field.getValue().split("\n")));
+                    preparation.setNotification(notification);
+                }
+            }
+        }
+        preparations.add(preparation);
+        return preparation;
+    }
+
+    private void setTargetMessage(Message message) {
+        targetMessage = new long[]{message.getGuild().getIdLong(), message.getChannel().getIdLong(), message.getIdLong()};
+    }
+
+    private void setTargetMessage(long[] targetMessage) {
+        this.targetMessage = targetMessage;
     }
 
     /**
@@ -290,32 +378,7 @@ public class PreparedEvent {
         return java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2]));
     }
 
-    /**
-     * Adds a role to the notification list
-     *
-     * @param toAdd the role to add
-     * @return true if the role was added, false if it was removed
-     */
-    public boolean addRole(String toAdd) {
-        if (toAdd.equals("@everyone")) {
-            if (notification.contains("@everyone")) {
-                notification.remove("@everyone");
-                return false;
-            } else {
-                notification.clear();
-                notification.add("@everyone");
-                return true;
-            }
-        } else if (notification.contains("@everyone")) {
-            notification.remove("@everyone");
-        }
-
-        if (notification.contains("@" + toAdd)) {
-            notification.remove("@" + toAdd);
-            return false;
-        }
-
-        notification.add("@" + toAdd);
-        return true;
+    public void setCurrentEditor(long newMessageId) {
+        this.editorId = newMessageId;
     }
 }

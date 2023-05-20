@@ -82,7 +82,8 @@ public class RUser {
                     currentEditor.forgettable();
                     Message oldMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
                     if (oldMessage == null) return;
-                    oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit").build()).queue();
+                    String url = oldMessage.getEmbeds().get(0).getUrl();
+                    oldMessage.editMessageEmbeds(new EmbedBuilder(oldMessage.getEmbeds().get(0)).setTitle("Event Setup - Click Select to edit", url).build()).queue();
                 } catch (Exception e) {
                     channel.sendMessage("Couldn't edit old message").queue();
                 }
@@ -91,7 +92,8 @@ public class RUser {
             if (currentEditor != null) {
                 Message newMessage = channel.retrieveMessageById(currentEditor.getEditorId()).complete();
                 if (newMessage == null) return;
-                newMessage.editMessageEmbeds(new EmbedBuilder(newMessage.getEmbeds().get(0)).setTitle("Event Setup").build()).queue();
+                String url = newMessage.getEmbeds().get(0).getUrl();
+                newMessage.editMessageEmbeds(new EmbedBuilder(newMessage.getEmbeds().get(0)).setTitle("Event Setup", url).build()).queue();
             }
         } catch (Exception e) {
             e.printStackTrace();

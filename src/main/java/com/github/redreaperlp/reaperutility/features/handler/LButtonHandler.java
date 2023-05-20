@@ -2,7 +2,9 @@ package com.github.redreaperlp.reaperutility.features.handler;
 
 import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
+import com.github.redreaperlp.reaperutility.features.event.Event;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
+import com.github.redreaperlp.reaperutility.features.event.Scheduler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -20,25 +22,41 @@ public class LButtonHandler extends ListenerAdapter {
             case COMPLETE -> {
                 PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 if (prepEvent.completePossible()) {
-                    prepEvent.complete();
+                    if (prepEvent.getTargetMessage()[2] == 0) {
+                        prepEvent.complete();
+                    } else {
+                        if (prepEvent.completeEdit()) {
+                            event.reply("I have edited [this](https://discord.com/channels/" + prepEvent.getTargetMessage()[0] + "/" + prepEvent.getTargetMessage()[1] + "/" + prepEvent.getTargetMessage()[2] + ") message!").setEphemeral(true).queue();
+                            return;
+                        } else {
+                            event.reply("I could not edit [this](https://discord.com/channels/" + prepEvent.getTargetMessage()[0] + "/" + prepEvent.getTargetMessage()[1] + "/" + prepEvent.getTargetMessage()[2] + ") message!\n" +
+                                    "Is it over or deleted?").setEphemeral(true).queue();
+                            return;
+                        }
+                    }
                     event.deferEdit().queue();
                 } else {
                     Message message = event.getMessage();
-                    event.editMessage(prepEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+                    event.editMessage(prepEvent.modifyEditor(message)).queue();
                 }
             }
             case SELECT -> {
                 PreparedEvent prepEvent = PreparedEvent.hasPreparation(event.getMessage());
                 RUser rUser = RUser.getUser(event.getUser().getIdLong());
+                if (rUser.getRateLimit().isSelectCooldown()) {
+                    event.reply("Please slow down!").setEphemeral(true).queue();
+                    return;
+                }
+                rUser.getRateLimit().selectCooldown();
                 if (!rUser.getRateLimit().addIsRateLimited(3)) {
                     if (rUser.getCurrentEditor() != null && rUser.getCurrentEditor().getEditorId() == prepEvent.getEditorId()) {
-                        event.reply("You are already editing this event!").queue();
+                        event.reply("You are already editing this event!").setEphemeral(true).queue();
                         return;
                     }
-                    rUser.setCurrentEditor(prepEvent);
                     event.deferEdit().queue();
+                    rUser.setCurrentEditor(prepEvent);
                 } else {
-                    event.reply("You are rate limited for " + rUser.getRateLimit().getDiscordFormattedRemaining()).queue();
+                    event.reply("You are rate limited for " + rUser.getRateLimit().getDiscordFormattedRemaining()).setEphemeral(true).queue();
                 }
             }
             case CANCEL -> {
@@ -84,6 +102,24 @@ public class LButtonHandler extends ListenerAdapter {
                 builder.setEmbeds(embed).setComponents(PrepareEmbed.eventHelpActionRow(page > 0, page < Help.EVENT_HELP.pages() - 1));
                 event.editMessage(builder.build()).queue();
             }
+            case EVENT_DELETE -> {
+                if (Scheduler.hasEvent(event.getMessageIdLong())) {
+                    Event deleteEvent = Scheduler.getEvent(event.getMessage().getIdLong());
+                    Scheduler.deleteEvent(deleteEvent);
+                }
+                event.getMessage().delete().queue();
+                event.deferEdit().queue();
+            }
+            case EVENT_EDIT -> {
+                if (Scheduler.hasEvent(event.getMessageIdLong())) {
+                    PreparedEvent prepEvent = PreparedEvent.initFromEvent(event.getMessage());
+                    Message sended = event.getUser().openPrivateChannel().complete().sendMessageEmbeds(PrepareEmbed.eventEdit(prepEvent)).addComponents(PrepareEmbed.eventEditActionRow(prepEvent.completePossible())).complete();
+                    prepEvent.setCurrentEditor(sended.getIdLong());
+                    RUser rUser = RUser.getUser(event.getUser().getIdLong());
+                    rUser.setCurrentEditor(prepEvent);
+                    event.reply("I have sent you a private [message](" + sended.getJumpUrl() + ") to edit the event!").setEphemeral(true).queue();
+                }
+            }
         }
     }
 
@@ -92,10 +128,17 @@ public class LButtonHandler extends ListenerAdapter {
         COMPLETE("Complete", "event.complete", ButtonStyle.SUCCESS),
         CANCEL("Cancel", "event.cancel", ButtonStyle.DANGER),
         SELECT("Select", "event.select", ButtonStyle.PRIMARY),
-        ENTER_INFOS("Enter Infos", "event.enter_infos", ButtonStyle.SUCCESS),
-        EVENT_HELP("❓", "event.help", ButtonStyle.SECONDARY),
+        ENTER_INFOS("ㅤEnter Infosㅤ", "event.enter_infos", ButtonStyle.SUCCESS),
+        EVENT_HELP("ㅤㅤ❓ㅤㅤ", "event.help", ButtonStyle.SECONDARY),
+        EVENT_HELP_EDIT("ㅤㅤ❓ㅤㅤ", "event.help.edit", ButtonStyle.SECONDARY),
         EVENT_HELP_NEXT("Next Page", "event.help.next", ButtonStyle.SUCCESS),
         EVENT_HELP_PREV("Previous Page", "event.help.prev", ButtonStyle.PRIMARY),
+
+        EVENT_ACCEPT("Accept", "event.accept", ButtonStyle.SUCCESS),
+        EVENT_DECLINE("Decline", "event.decline", ButtonStyle.DANGER),
+        EVENT_UNSURE("Unsure", "event.unsure", ButtonStyle.PRIMARY),
+        EVENT_EDIT("ㅤㅤEditㅤㅤ", "event.edit", ButtonStyle.PRIMARY),
+        EVENT_DELETE("ㅤㅤDeleteㅤㅤ", "event.delete", ButtonStyle.DANGER),
         UNKNOWN("UNKNOWN", "UNKNOWN", ButtonStyle.UNKNOWN);
 
         private final String label;
@@ -148,8 +191,13 @@ public class LButtonHandler extends ListenerAdapter {
                         .setColor(0xffff00).build(),
                 new EmbedBuilder()
                         .setTitle("Event Help")
-                        .setDescription("___***Step 2***___\nSurely you've noticed that certain options were missing from the previously introduced modal. These additional options are specifically associated with the following actions")
-                        .addField("___***```Notification```***___", "> Not done Yet", false)
+                        .setDescription("___***Step 2***___\n" +
+                                "Surely you've noticed that certain options were missing from the previously introduced modal.\n" +
+                                "These additional options are specifically associated with the following actions")
+                        .addField("___***```Notification```***___", "> You have the option to choose whether you want to notify anyone **when you complete the setup**.\n" +
+                                "> To configure this, you can use the ***/select-role*** command. This command provides a completion hint that displays the available roles within the event's guild.\n" +
+                                "> If a role will be notified, it will be marked with a ✅ symbol in the hint. Otherwise it will display an ❌ symbol.\n" +
+                                "> It's entirely up to you whether you want to notify anyone, so you can toggle this selection as needed.", false)
                         .addField("___***```Event Channel```***___", "> Unlock the power of event channels!\n" +
                                 "> To select a channel for your event, simply follow these steps:\n" +
                                 "> Go to the desired channel, ___right-click on any user___, navigate to the ***Apps*** section, and click on ***Select Event Channel***. \n" +
@@ -158,7 +206,18 @@ public class LButtonHandler extends ListenerAdapter {
                                 "> When you click on ***Enter Infos*** or manually select it by clicking on ***Select***, the bot registers your choice and understands that you are referring to that particular setup. This is important for utilizing interactions like Slash Commands or using the Apps.\n" +
                                 "> It's worth noting that the selection remains active for about 4 minutes, after which it automatically unselects itself. So, make sure to complete your desired actions within that timeframe!", false)
                         .setFooter("Page 2")
-                        .setColor(0xffff00).build()),
+                        .setColor(0xffff00).build(),
+                new EmbedBuilder()
+                        .setTitle("Event Help")
+                        .setDescription("___***Step 3***___\n" +
+                                "Now you're all set to ***Complete*** the event! If all your information is correct, you can proceed and let your members see what you're planning.\n" +
+                                "Make sure to review everything one last time before finalizing the event.")
+                        .addField("___***```Completed```***___", "> The completed event will be displayed in your selected channel, allowing your users to ***accept***, ***decline***, or mark themselves as ***unsure*** about the event.\n" +
+                                "> Users with the appropriate permissions will also be able to ***edit*** or ***delete*** the event as needed.\n" +
+                                "> Furthermore, when the event's scheduled time arrives, the Bot will send timely reminders to the users.", false)
+                        .setFooter("Page 3")
+                        .setColor(0xffff00).build()
+        ),
         ;
 
         private final MessageEmbed[] pages;

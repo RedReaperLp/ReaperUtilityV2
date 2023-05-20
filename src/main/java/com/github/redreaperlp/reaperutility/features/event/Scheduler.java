@@ -86,6 +86,21 @@ public class Scheduler {
         }
     }
 
+    public static Event getEvent(long idLong) {
+        for (Event event : eventList) {
+            if (event.getMessageId() == idLong) {
+                return event;
+            }
+        }
+        return null;
+    }
+
+    public static void deleteEvent(Event deleteEvent) {
+        deleteEvent.getCurrentScheduler().delete(deleteEvent);
+        deleteEvent.removeFromDatabase();
+        eventList.remove(deleteEvent);
+    }
+
     public static class EventSchduler {
         private final List<Event> eventList = new ArrayList<>();
         private Thread schedulerThread;
@@ -126,5 +141,8 @@ public class Scheduler {
             }
         }
 
+        public void delete(Event event) {
+            eventList.remove(event);
+        }
     }
 }

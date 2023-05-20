@@ -25,7 +25,7 @@ public class LUserContextHandler extends ListenerAdapter {
                 }
                 Message message = event.getUser().openPrivateChannel().complete().retrieveMessageById(rUser.getCurrentEditor().getEditorId()).complete();
                 rUser.getCurrentEditor().setEventChannel(event.getGuild().getIdLong(), event.getChannel().getIdLong());
-                message.editMessage(rUser.getCurrentEditor().modifyEditor(event.getUser().openPrivateChannel().complete(), message)).queue();
+                message.editMessage(rUser.getCurrentEditor().modifyEditor(message)).queue();
                 event.getHook().sendMessage("Selected this channel as event channel").queue();
             }
         }

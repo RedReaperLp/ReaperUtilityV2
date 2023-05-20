@@ -19,6 +19,11 @@ public class Event {
     private LocalDateTime timestamp;
     private Scheduler.EventSchduler currentScheduler;
 
+    private List<Long> acceptedUsers = new ArrayList<>();
+    private List<Long> declinedUsers = new ArrayList<>();
+    private List<Long> undecidedUsers = new ArrayList<>();
+
+
     public Event(long guildId, long channelId, long messageId, LocalDateTime timestamp) {
         this.guildId = guildId;
         this.channelId = channelId;
@@ -113,6 +118,37 @@ public class Event {
 
     public void setCurrentScheduler(Scheduler.EventSchduler scheduler) {
         this.currentScheduler = scheduler;
+    }
+
+    public Scheduler.EventSchduler getCurrentScheduler() {
+        return currentScheduler;
+    }
+
+    public String getAcceptedString() {
+        if (acceptedUsers.isEmpty()) return "-";
+        StringBuilder sb = new StringBuilder();
+        for (long id : acceptedUsers) {
+            sb.append("<@").append(id).append(">\n");
+        }
+        return sb.toString();
+    }
+
+    public String getDeclinedString() {
+        if (declinedUsers.isEmpty()) return "-";
+        StringBuilder sb = new StringBuilder();
+        for (long id : declinedUsers) {
+            sb.append("<@").append(id).append(">\n");
+        }
+        return sb.toString();
+    }
+
+    public String getUndecidedString() {
+        if (undecidedUsers.isEmpty()) return "-";
+        StringBuilder sb = new StringBuilder();
+        for (long id : undecidedUsers) {
+            sb.append("<@").append(id).append(">\n");
+        }
+        return sb.toString();
     }
 
     public class EventReminder {

@@ -64,7 +64,7 @@ public class LCommandHandler extends ListenerAdapter {
             }
             boolean added = preparedEvent.addRole(role.getName());
             Message message = event.getChannel().asPrivateChannel().retrieveMessageById(preparedEvent.getEditorId()).complete();
-            message.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+            message.editMessage(preparedEvent.modifyEditor(message)).queue();
             event.reply("Role " + role.getName() + (added ? " added" : " removed")).setEphemeral(true).queue();
         } catch (Exception e) {
             e.printStackTrace();

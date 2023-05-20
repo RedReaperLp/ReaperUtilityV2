@@ -67,11 +67,11 @@ public class LModalHandler extends ListenerAdapter {
                 if (colorFailed) {
                     builder.addField("Color", "You have to provide a ***RGB*** color code!", false);
                 }
-                event.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+                event.editMessage(preparedEvent.modifyEditor(message)).queue();
                 event.getHook().sendMessageEmbeds(builder.build()).queue();
                 return;
             }
-            event.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+            event.editMessage(preparedEvent.modifyEditor(message)).queue();
         }
     }
 
