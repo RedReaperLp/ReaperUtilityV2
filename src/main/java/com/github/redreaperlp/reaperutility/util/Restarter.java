@@ -73,7 +73,7 @@ public class Restarter implements Runnable {
                     while (true) {
                         try {
                             oldHash = newHash;
-                            TimeUnit.MILLISECONDS.sleep(500);
+                            TimeUnit.MILLISECONDS.sleep(1000);
                             newHash = digest();
                             if (oldHash.equals(newHash)) {
                                 restart();

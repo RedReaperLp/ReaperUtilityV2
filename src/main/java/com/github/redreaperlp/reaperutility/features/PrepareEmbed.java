@@ -54,6 +54,13 @@ public class PrepareEmbed {
         return builder.build();
     }
 
+    public static ActionRow eventHelpActionRow(boolean prevEnabled, boolean nextEnabled) {
+        return ActionRow.of(
+                LButtonHandler.ButtonKey.EVENT_HELP_PREV.getButton().withDisabled(!prevEnabled),
+                LButtonHandler.ButtonKey.EVENT_HELP_NEXT.getButton().withDisabled(!nextEnabled)
+        );
+    }
+
     public static List<ActionRow> eventSetupActionRow(boolean completeEnabled) {
         return List.of(
                 ActionRow.of(
@@ -63,7 +70,7 @@ public class PrepareEmbed {
                 ),
                 ActionRow.of(
                         LButtonHandler.ButtonKey.ENTER_INFOS.getButton(),
-                        LButtonHandler.ButtonKey.EVENT_HELP_1.getButton()
+                        LButtonHandler.ButtonKey.EVENT_HELP.getButton()
                 )
         );
     }

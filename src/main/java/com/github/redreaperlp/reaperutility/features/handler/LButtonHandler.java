@@ -1,14 +1,16 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
 import com.github.redreaperlp.reaperutility.RUser;
+import com.github.redreaperlp.reaperutility.features.PrepareEmbed;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.utils.MarkdownUtil;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 
 public class LButtonHandler extends ListenerAdapter {
     @Override
@@ -21,11 +23,8 @@ public class LButtonHandler extends ListenerAdapter {
                     prepEvent.complete();
                     event.deferEdit().queue();
                 } else {
-                    prepEvent.modifyEditor(event.getChannel().asPrivateChannel());
-                    event.replyEmbeds(new EmbedBuilder().setTitle("Wrong Information")
-                            .addField("Date", "You have to provide a ***valid*** date which is ***not in the past***!", false)
-                            .build()
-                    ).queue();
+                    Message message = event.getMessage();
+                    event.editMessage(prepEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
                 }
             }
             case SELECT -> {
@@ -62,21 +61,28 @@ public class LButtonHandler extends ListenerAdapter {
                 event.replyModal(LModalHandler.ModalKey.EVENT_SETUP.build(prepEvent)).queue();
             }
 
-            case EVENT_HELP_1 -> {
-                MessageEmbed embed = new EmbedBuilder()
-                        .setTitle("Event Help")
-                        .setDescription("This is the help page for the event setup")
-                        .addField(MarkdownUtil.codeblock("arm","Step 1"), "Click on the ***Enter Infos*** button to enter your information", false)
-                        .addField("```Name```", "Enter the name of the event, this is required to complete the setup", false)
-                        .addField("```Description```", "Enter the description of the event, this is optional, to remove the description, just enter ***none***, ***empty*** or ***remove***", false)
-                        .addField("```Date```", "Enter the date of the event in the format YYYY-MM-DD HH:MM for example ___***2023-01-01 18:05***___, this is required to complete the setup", false)
-                        .addField("```Location```", "Enter the location of the event, this is optional, to remove the location, just enter ***none***, ***empty*** or ***remove***.\n" +
-                                "If you want to have a channel as location, you have to put it in brackets. Example: {1086673451777007636} or {myChannelName}", false)
-                        .addField("```Color```", "Here you can select the color of the events embed border, this is optional, default is green.\nIf you want to set a new color, you have to enter RGB values, for example 255 0 0 for red", false)
-                        .addField("```Step 2```", "Click on the ***Complete*** button to complete the setup", false)
-                        .addField("```Conditions```", "You have to provide a ***valid*** date which is ***not in the past***!\nYou have to provide a Name", false)
-                        .build();
-                event.replyEmbeds(embed).queue();
+            case EVENT_HELP -> {
+                event.replyEmbeds(Help.EVENT_HELP.getPage(0)).addComponents(PrepareEmbed.eventHelpActionRow(false, true)).queue();
+            }
+            case EVENT_HELP_NEXT -> {
+                MessageEmbed embed = event.getMessage().getEmbeds().get(0);
+                int page = Integer.parseInt(embed.getFooter().getText().split(" ")[1]);
+                MessageEditBuilder builder = MessageEditBuilder.fromMessage(event.getMessage());
+
+                embed = Help.EVENT_HELP.getPage(page);
+
+                builder.setEmbeds(embed).setComponents(PrepareEmbed.eventHelpActionRow(page > 0, page < Help.EVENT_HELP.pages() - 1));
+                event.editMessage(builder.build()).queue();
+            }
+            case EVENT_HELP_PREV -> {
+                MessageEmbed embed = event.getMessage().getEmbeds().get(0);
+                int page = Integer.parseInt(embed.getFooter().getText().split(" ")[1]) - 2;
+                MessageEditBuilder builder = MessageEditBuilder.fromMessage(event.getMessage());
+
+                embed = Help.EVENT_HELP.getPage(page);
+
+                builder.setEmbeds(embed).setComponents(PrepareEmbed.eventHelpActionRow(page > 0, page < Help.EVENT_HELP.pages() - 1));
+                event.editMessage(builder.build()).queue();
             }
         }
     }
@@ -85,9 +91,11 @@ public class LButtonHandler extends ListenerAdapter {
         COMPLETE_EDIT("Complete", "event.complete.edit", ButtonStyle.SUCCESS),
         COMPLETE("Complete", "event.complete", ButtonStyle.SUCCESS),
         CANCEL("Cancel", "event.cancel", ButtonStyle.DANGER),
-        EVENT_HELP_1("❓", "event.help.1", ButtonStyle.SECONDARY),
         SELECT("Select", "event.select", ButtonStyle.PRIMARY),
         ENTER_INFOS("Enter Infos", "event.enter_infos", ButtonStyle.SUCCESS),
+        EVENT_HELP("❓", "event.help", ButtonStyle.SECONDARY),
+        EVENT_HELP_NEXT("Next Page", "event.help.next", ButtonStyle.SUCCESS),
+        EVENT_HELP_PREV("Previous Page", "event.help.prev", ButtonStyle.PRIMARY),
         UNKNOWN("UNKNOWN", "UNKNOWN", ButtonStyle.UNKNOWN);
 
         private final String label;
@@ -119,6 +127,52 @@ public class LButtonHandler extends ListenerAdapter {
                 }
             }
             return UNKNOWN;
+        }
+    }
+
+    public enum Help {
+        EVENT_HELP(
+                new EmbedBuilder()
+                        .setTitle("Event Help")
+                        .setDescription("___***Step 1***___\nBefore clicking the mysterious-looking ***Enter Infos*** button to begin input, take a moment to explore this comprehensive help guide")
+                        .addField("___***```Name```***___", "> Get your creative juices flowing and enter the event name in the Modal! This step is ___***absolutely required***___ to finalize the setup", false)
+                        .addField("___***```Description```***___", "> Let your event shine with a captivating description, but remember, it's totally ___***optional***___! If you want to remove the description, simply enter ***none***, ***empty***, or ***remove***.", false)
+                        .addField("___***```Date```***___", "> Time to mark your calendars! Enter the date of the event in the format ***YYYY-MM-DD HH:MM***, just like ***2023-01-01 18:05***. Remember, this step is ___***required***___ to complete the setup.", false)
+                        .addField("___***```Location```***___", "> Time to pinpoint the event location!\n" +
+                                "> You can enter the location of the event, but it's ***optional***.\n" +
+                                "> If you want to remove the location, simply enter ***none***, ***empty***, or ***remove***.\n" +
+                                "> And here's an exciting twist: if you want to set a channel as the location, enclose its ***ID*** or ***name*** in brackets. Don't worry, you only need to type a few letters or numbers to find a matching channel.\n" +
+                                "> For example, you can use ***{1086673451777007636}*** or ***{myChannelName}*** to make your event stand out", false)
+                        .addField("___***```Color```***___", "> Let your event shine with a touch of color! Customize the embed border by entering RGB values. The default color is green, but feel free to unleash your creativity. For example, enter ***255 0 0*** for a vibrant red hue.", false)
+                        .setFooter("Page 1")
+                        .setColor(0xffff00).build(),
+                new EmbedBuilder()
+                        .setTitle("Event Help")
+                        .setDescription("___***Step 2***___\nSurely you've noticed that certain options were missing from the previously introduced modal. These additional options are specifically associated with the following actions")
+                        .addField("___***```Notification```***___", "> Not done Yet", false)
+                        .addField("___***```Event Channel```***___", "> Unlock the power of event channels!\n" +
+                                "> To select a channel for your event, simply follow these steps:\n" +
+                                "> Go to the desired channel, ___right-click on any user___, navigate to the ***Apps*** section, and click on ***Select Event Channel***. \n" +
+                                "> Please note that this feature is ***only*** available if you have previously selected the event and is ***limited to the guild where you created the event***.", false)
+                        .addField("___***```But Wait```***___", "> Let's dive deeper into the concept of selecting an Event Setup.\n" +
+                                "> When you click on ***Enter Infos*** or manually select it by clicking on ***Select***, the bot registers your choice and understands that you are referring to that particular setup. This is important for utilizing interactions like Slash Commands or using the Apps.\n" +
+                                "> It's worth noting that the selection remains active for about 4 minutes, after which it automatically unselects itself. So, make sure to complete your desired actions within that timeframe!", false)
+                        .setFooter("Page 2")
+                        .setColor(0xffff00).build()),
+        ;
+
+        private final MessageEmbed[] pages;
+
+        Help(MessageEmbed... pages) {
+            this.pages = pages;
+        }
+
+        public MessageEmbed getPage(int page) {
+            return pages[page];
+        }
+
+        public int pages() {
+            return pages.length;
         }
     }
 }

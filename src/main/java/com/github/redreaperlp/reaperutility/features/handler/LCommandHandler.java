@@ -36,6 +36,7 @@ public class LCommandHandler extends ListenerAdapter {
             EGlobalCommands command = EGlobalCommands.getByName(event.getName());
             switch (command) {
                 case CLEAR -> clear(event);
+                case SELECT_ROLE_NOTIFY -> selectRoleNotify(event);
                 case UNKNOWN -> event.replyEmbeds(PrepareEmbed.unknownCommandEmbed(event)).queue();
             }
         } else {
@@ -44,6 +45,30 @@ public class LCommandHandler extends ListenerAdapter {
                 case EVENT -> event(event);
                 case UNKNOWN -> event.replyEmbeds(PrepareEmbed.unknownCommandEmbed(event)).queue();
             }
+        }
+    }
+
+    private void selectRoleNotify(SlashCommandInteractionEvent event) {
+        RUser rUser = RUser.getUser(event.getUser().getIdLong());
+        PreparedEvent preparedEvent = rUser.getCurrentEditor();
+        if (preparedEvent == null) {
+            event.reply("You are not editing an event").setEphemeral(true).queue();
+            return;
+        }
+        try {
+            long roleId = event.getOption("role").getAsLong();
+            Role role = Main.jda.getGuildById(preparedEvent.getTargetMessage()[0]).getRoleById(roleId);
+            if (role == null) {
+                event.reply("Role not found").setEphemeral(true).queue();
+                return;
+            }
+            boolean added = preparedEvent.addRole(role.getName());
+            Message message = event.getChannel().asPrivateChannel().retrieveMessageById(preparedEvent.getEditorId()).complete();
+            message.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+            event.reply("Role " + role.getName() + (added ? " added" : " removed")).setEphemeral(true).queue();
+        } catch (Exception e) {
+            e.printStackTrace();
+            event.reply("Role not found").setEphemeral(true).queue();
         }
     }
 
@@ -177,6 +202,8 @@ public class LCommandHandler extends ListenerAdapter {
                     new CommandOption(OptionType.INTEGER, "amount", "The amount of messages to be cleared", true, false),
                     new CommandOption(OptionType.USER, "user", "The user whose messages should be cleared"),
                     new CommandOption(OptionType.ROLE, "role", "The role whose messages should be cleared")),
+            SELECT_ROLE_NOTIFY("select-role", "Selects a role to be notified when a new event is created", Command.Type.SLASH,
+                    new CommandOption(OptionType.STRING, "role", "The role to be notified", true, true)),
             UNKNOWN(null, null, null);
 
 

@@ -70,6 +70,7 @@ public class Scheduler {
             fiveSecondScheduler.scheduleEvent(toSchedule);
         } else {
             if (toSchedule.getTimestamp().isBefore(now)) {
+                eventList.remove(toSchedule);
                 toSchedule.fire();
                 return;
             }
@@ -79,6 +80,7 @@ public class Scheduler {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                eventList.remove(toSchedule);
                 toSchedule.fire();
             }).start();
         }

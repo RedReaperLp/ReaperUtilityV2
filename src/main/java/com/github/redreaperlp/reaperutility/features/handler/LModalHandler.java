@@ -5,6 +5,7 @@ import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -16,6 +17,7 @@ import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -47,6 +49,7 @@ public class LModalHandler extends ListenerAdapter {
                     case COLOR -> colorFailed = setColor(value.getAsString(), preparedEvent);
                 }
             }
+            Message message = event.getMessage();
             if (dateResult != 0 || colorFailed) {
                 EmbedBuilder builder = new EmbedBuilder();
                 builder.setTitle("Wrong Information");
@@ -59,16 +62,16 @@ public class LModalHandler extends ListenerAdapter {
                             builder.addField("Date", "Keep ***OUT*** non-numeric characters except for the ***-***!", false);
                     case 5 ->
                             builder.addField("Date", "You have to provide a ***valid*** date which is ***not in the past***!", false);
+                    case 6 -> builder.addField("Date", "You have to provide a ***valid*** time!", false);
                 }
                 if (colorFailed) {
                     builder.addField("Color", "You have to provide a ***RGB*** color code!", false);
                 }
-                event.replyEmbeds(builder.build()).queue();
-                preparedEvent.modifyEditor(event.getChannel().asPrivateChannel());
+                event.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
+                event.getHook().sendMessageEmbeds(builder.build()).queue();
                 return;
             }
-            preparedEvent.modifyEditor(event.getChannel().asPrivateChannel());
-            event.deferEdit().queue();
+            event.editMessage(preparedEvent.modifyEditor(event.getChannel().asPrivateChannel(), message)).queue();
         }
     }
 
@@ -108,7 +111,7 @@ public class LModalHandler extends ListenerAdapter {
                 }
             } catch (NumberFormatException e) {
                 for (MessageChannel channel : guild.getTextChannels()) {
-                    if (channel.getName().contains(extract)) {
+                    if (channel.getName().toLowerCase().contains(extract.toLowerCase())) {
                         value = value.replace("{" + extract + "}", channel.getAsMention());
                         break;
                     }
@@ -149,7 +152,12 @@ public class LModalHandler extends ListenerAdapter {
                 return 4;
             }
         }
-        LocalDateTime eventDate = LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        LocalDateTime eventDate;
+        try {
+            eventDate = LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        } catch (DateTimeParseException e) {
+            return 6;
+        }
         long epoch = eventDate.toEpochSecond(Main.zoneOffset);
         preparedEvent.setDate(epoch);
         return eventDate.isBefore(LocalDateTime.now()) ? 5 : 0;

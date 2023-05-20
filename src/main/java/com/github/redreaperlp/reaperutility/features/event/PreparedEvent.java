@@ -10,18 +10,16 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.interactions.components.Component;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
-import org.w3c.dom.css.RGBColor;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HexFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class PreparedEvent {
     static List<PreparedEvent> preparations = new ArrayList<>();
@@ -30,7 +28,7 @@ public class PreparedEvent {
     private String description;
     private String location;
     private long date;
-    private String notification;
+    private List<String> notification;
     private long[] targetMessage;
     private int[] color = new int[]{0, 255, 0};
 
@@ -68,7 +66,7 @@ public class PreparedEvent {
         this.date = Long.parseLong(value.replaceAll("[<t:f>]", ""));
     }
 
-    public void setNotification(String value) {
+    public void setNotification(List<String> value) {
         this.notification = value;
     }
 
@@ -109,7 +107,10 @@ public class PreparedEvent {
         return getDate().toEpochSecond(Main.zoneOffset);
     }
 
-    public String getNotification() {
+    public List<String> getNotification() {
+        if (notification == null) {
+            notification = new ArrayList<>();
+        }
         return notification;
     }
 
@@ -140,8 +141,7 @@ public class PreparedEvent {
         };
     }
 
-    public void modifyEditor(PrivateChannel channel) {
-        Message message = channel.retrieveMessageById(editorId).complete();
+    public MessageEditData modifyEditor(PrivateChannel channel, Message message) {
         EmbedBuilder builder = new EmbedBuilder(message.getEmbeds().get(0));
         builder.clearFields();
         builder.addField(PrepareEmbed.FieldKey.NAME.key(), name, false);
@@ -153,14 +153,14 @@ public class PreparedEvent {
         }
         builder.addField(PrepareEmbed.FieldKey.DATE.key(), "<t:" + date + ":f>", false);
         builder.addField(PrepareEmbed.FieldKey.REMAINING.key, "<t:" + date + ":R>", false);
-        if (notification != null && !notification.equals("none")) {
-            builder.addField(PrepareEmbed.FieldKey.NOTIFICATION.key(), notification, false);
+        if (notification != null && notification.size() > 0) {
+            builder.addField(PrepareEmbed.FieldKey.NOTIFICATION.key(), String.join("\n", notification), false);
         }
         if (targetMessage != null) {
             builder.addField(PrepareEmbed.FieldKey.EVENT_CHANNEL.key(), "<#" + targetMessage[1] + ">", false);
         }
         builder.setColor(java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2])));
-        message.editMessage(MessageEditBuilder.fromMessage(message).setEmbeds(builder.build()).setComponents(PrepareEmbed.eventSetupActionRow(completePossible())).build()).queue();
+        return MessageEditBuilder.fromMessage(message).setEmbeds(builder.build()).setComponents(PrepareEmbed.eventSetupActionRow(completePossible())).build();
     }
 
     public void setColor(int[] rgb) {
@@ -168,7 +168,7 @@ public class PreparedEvent {
     }
 
     public boolean completePossible() {
-        if (name == null || name.equals("Your Name")) {
+        if (name == null || name.equals("Events Name")) {
             return false;
         } else if (LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset).isBefore(LocalDateTime.now(Main.zoneOffset))) {
             return false;
@@ -191,10 +191,20 @@ public class PreparedEvent {
     public void complete() {
         Guild tarGuild = Objects.requireNonNull(Main.jda.getGuildById(targetMessage[0]));
         MessageChannel tarChannel = Objects.requireNonNull(tarGuild.getTextChannelById(targetMessage[1]));
-        targetMessage[2] = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this)).complete().getIdLong();
+        MessageCreateAction create = tarChannel.sendMessageEmbeds(PrepareEmbed.eventCompleted(this));
+        if (notification.size() > 0) {
+            String roleMentionString = notification.stream()
+                    .filter(roleName -> roleName.startsWith("@"))
+                    .map(roleName -> Objects.requireNonNull(tarGuild.getRolesByName(roleName.substring(1), true).get(0)).getAsMention())
+                    .collect(Collectors.joining("\n"));
+            create.addContent(roleMentionString);
+        }
+        targetMessage[2] = create.complete().getIdLong();
+
         Scheduler.scheduleEvent(new Event(targetMessage[0], targetMessage[1], targetMessage[2], LocalDateTime.ofEpochSecond(date, 0, Main.zoneOffset)));
         preparations.remove(this);
     }
+
 
     public int countDown() {
         return timeUntilForget--;
@@ -226,9 +236,15 @@ public class PreparedEvent {
                 case DESCRIPTION -> preparation.setDescription(field.getValue());
                 case LOCATION -> preparation.setLocation(field.getValue());
                 case DATE -> preparation.setDate(field.getValue());
-                case NOTIFICATION -> preparation.setNotification(field.getValue());
+                case NOTIFICATION -> {
+                    List<String> notification = new ArrayList<>(Arrays.asList(field.getValue().split("\n")));
+                    preparation.setNotification(notification);
+                }
                 case EVENT_CHANNEL -> preparation.setEventChannel(field.getValue());
             }
+        }
+        if (preparation.getNotification() == null) {
+            preparation.setNotification(new ArrayList<>());
         }
         int[] rgb = new int[] {embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()};
         preparation.setColor(rgb);
@@ -272,5 +288,34 @@ public class PreparedEvent {
 
     public java.awt.Color color() {
         return java.awt.Color.decode(String.format("#%02x%02x%02x", color[0], color[1], color[2]));
+    }
+
+    /**
+     * Adds a role to the notification list
+     *
+     * @param toAdd the role to add
+     * @return true if the role was added, false if it was removed
+     */
+    public boolean addRole(String toAdd) {
+        if (toAdd.equals("@everyone")) {
+            if (notification.contains("@everyone")) {
+                notification.remove("@everyone");
+                return false;
+            } else {
+                notification.clear();
+                notification.add("@everyone");
+                return true;
+            }
+        } else if (notification.contains("@everyone")) {
+            notification.remove("@everyone");
+        }
+
+        if (notification.contains("@" + toAdd)) {
+            notification.remove("@" + toAdd);
+            return false;
+        }
+
+        notification.add("@" + toAdd);
+        return true;
     }
 }

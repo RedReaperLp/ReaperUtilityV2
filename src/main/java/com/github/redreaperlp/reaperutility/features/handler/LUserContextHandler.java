@@ -1,7 +1,7 @@
 package com.github.redreaperlp.reaperutility.features.handler;
 
-import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.RUser;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -23,8 +23,9 @@ public class LUserContextHandler extends ListenerAdapter {
                     event.getHook().sendMessage("You are not editing an event in this guild, please select an event from that guild first!").queue();
                     return;
                 }
+                Message message = event.getUser().openPrivateChannel().complete().retrieveMessageById(rUser.getCurrentEditor().getEditorId()).complete();
                 rUser.getCurrentEditor().setEventChannel(event.getGuild().getIdLong(), event.getChannel().getIdLong());
-                rUser.getCurrentEditor().modifyEditor(event.getUser().openPrivateChannel().complete());
+                message.editMessage(rUser.getCurrentEditor().modifyEditor(event.getUser().openPrivateChannel().complete(), message)).queue();
                 event.getHook().sendMessage("Selected this channel as event channel").queue();
             }
         }
