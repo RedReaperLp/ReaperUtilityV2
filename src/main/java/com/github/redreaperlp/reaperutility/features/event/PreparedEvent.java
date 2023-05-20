@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
@@ -198,9 +199,17 @@ public class PreparedEvent {
         if (notification.size() > 0) {
             String roleMentionString = notification.stream()
                     .filter(roleName -> roleName.startsWith("@"))
-                    .map(roleName -> Objects.requireNonNull(tarGuild.getRolesByName(roleName.substring(1), true).get(0)).getAsMention())
+                    .map(roleName -> {
+                        if (roleName.equals("@everyone")) {
+                            return "@everyone";
+                        }
+                        Role role = tarGuild.getRolesByName(roleName.substring(1), true).get(0);
+                        return role.getAsMention();
+                    })
                     .collect(Collectors.joining("\n"));
+
             create.addContent(roleMentionString);
+
         }
         targetMessage[2] = create.complete().getIdLong();
 
@@ -320,7 +329,7 @@ public class PreparedEvent {
         preparation.setDescription(embed.getDescription());
         preparation.setColor(new int[]{embed.getColor().getRed(), embed.getColor().getGreen(), embed.getColor().getBlue()});
         for (MessageEmbed.Field field : embed.getFields()) {
-            switch (Objects.requireNonNull(PrepareEmbed.FieldKey.fromKey(field.getName()))) {
+            switch (PrepareEmbed.FieldKey.fromKey(field.getName())) {
                 case DATE -> preparation.setDate(field.getValue());
                 case NOTIFICATION -> {
                     List<String> notification = new ArrayList<>(Arrays.asList(field.getValue().split("\n")));

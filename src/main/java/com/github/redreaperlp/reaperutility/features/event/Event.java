@@ -3,6 +3,8 @@ package com.github.redreaperlp.reaperutility.features.event;
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
 import com.github.redreaperlp.reaperutility.util.Color;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,6 +39,8 @@ public class Event {
         this.channelId = targetMessage[1];
         this.messageId = targetMessage[2];
         this.timestamp = event.getDate();
+        currentScheduler.delete(this);
+        Scheduler.schdule(this);
         updateToDatabase();
     }
 
@@ -76,6 +80,7 @@ public class Event {
             stmt.setLong(2, guildId);
             stmt.setLong(3, channelId);
             stmt.setLong(4, messageId);
+            stmt.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -149,6 +154,36 @@ public class Event {
             sb.append("<@").append(id).append(">\n");
         }
         return sb.toString();
+    }
+
+
+    public void toggleAccept(long idLong) {
+        toggleRole(acceptedUsers, declinedUsers, undecidedUsers, idLong);
+    }
+
+    public void toggleDecline(long idLong) {
+        toggleRole(declinedUsers, acceptedUsers, undecidedUsers, idLong);
+    }
+
+    public void toggleUndecided(long idLong) {
+        toggleRole(undecidedUsers, acceptedUsers, declinedUsers, idLong);
+    }
+
+    public void toggleRole(List<Long> list, List<Long> list2, List<Long> list3, long idLong) {
+        if (list.contains(idLong)) {
+            list.remove(idLong);
+        } else {
+            list.add(idLong);
+            list2.remove(idLong);
+            list3.remove(idLong);
+        }
+    }
+
+    public void modifyEmbed(EmbedBuilder builder) {
+        int fields = builder.getFields().size() - 1;
+        builder.getFields().set(fields - 2, new MessageEmbed.Field("Accepted", getAcceptedString(), true));
+        builder.getFields().set(fields - 1, new MessageEmbed.Field("Declined", getDeclinedString(), true));
+        builder.getFields().set(fields, new MessageEmbed.Field("Undecided", getUndecidedString(), true));
     }
 
     public class EventReminder {

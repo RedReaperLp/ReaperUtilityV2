@@ -47,7 +47,14 @@ public class Scheduler {
         }
     }
 
+    /**
+     * Schedules an event to the correct scheduler (Used to update the scheduler of an event)
+     * @param toSchedule The event to schedule
+     */
     public static void schdule(Event toSchedule) {
+        if (!eventList.contains(toSchedule)) {
+            eventList.add(toSchedule);
+        }
         LocalDateTime now = LocalDateTime.now();
         long seconds = toSchedule.getTimestamp().toEpochSecond(Main.zoneOffset) - now.toEpochSecond(Main.zoneOffset);
         if (seconds > 60 * 60) {
@@ -113,6 +120,7 @@ public class Scheduler {
 
         public void scheduleEvent(Event event) {
             eventList.add(event);
+            Color.printTest("Scheduled event " + event.getMessageId() + " for " + timeToWait + " seconds");
             startScheduler();
         }
 
@@ -143,6 +151,7 @@ public class Scheduler {
 
         public void delete(Event event) {
             eventList.remove(event);
+            Color.printTest("Deleted event " + event.getMessageId() + " from scheduler for " + timeToWait + " seconds");
         }
     }
 }

@@ -118,10 +118,38 @@ public class LButtonHandler extends ListenerAdapter {
                     RUser rUser = RUser.getUser(event.getUser().getIdLong());
                     rUser.setCurrentEditor(prepEvent);
                     event.reply("I have sent you a private [message](" + sended.getJumpUrl() + ") to edit the event!").setEphemeral(true).queue();
+                } else {
+                    event.reply("This event is already over!").setEphemeral(true).queue();
                 }
             }
+            case EVENT_ACCEPT -> handleEventAction(event, 0);
+            case EVENT_DECLINE -> handleEventAction(event, 1);
+            case EVENT_UNSURE -> handleEventAction(event, 2);
         }
     }
+
+    private void handleEventAction(ButtonInteractionEvent buttonEvent, int action) {
+        Event event = Scheduler.getEvent(buttonEvent.getMessageIdLong());
+        if (event != null) {
+            switch (action) {
+                case 0 -> {
+                    event.toggleAccept(buttonEvent.getUser().getIdLong());
+                }
+                case 1 -> {
+                    event.toggleDecline(buttonEvent.getUser().getIdLong());
+                }
+                case 2 -> {
+                    event.toggleUndecided(buttonEvent.getUser().getIdLong());
+                }
+            }
+            EmbedBuilder builder = new EmbedBuilder(buttonEvent.getMessage().getEmbeds().get(0));
+            event.modifyEmbed(builder);
+            buttonEvent.editMessageEmbeds(builder.build()).queue();
+        } else {
+            buttonEvent.reply("This event is already over!").setEphemeral(true).queue();
+        }
+    }
+
 
     public enum ButtonKey {
         COMPLETE_EDIT("Complete", "event.complete.edit", ButtonStyle.SUCCESS),
@@ -129,16 +157,16 @@ public class LButtonHandler extends ListenerAdapter {
         CANCEL("Cancel", "event.cancel", ButtonStyle.DANGER),
         SELECT("Select", "event.select", ButtonStyle.PRIMARY),
         ENTER_INFOS("ㅤEnter Infosㅤ", "event.enter_infos", ButtonStyle.SUCCESS),
-        EVENT_HELP("ㅤㅤ❓ㅤㅤ", "event.help", ButtonStyle.SECONDARY),
-        EVENT_HELP_EDIT("ㅤㅤ❓ㅤㅤ", "event.help.edit", ButtonStyle.SECONDARY),
+        EVENT_HELP("ㅤㅤ ❓ ㅤㅤ", "event.help", ButtonStyle.SECONDARY),
+        EVENT_HELP_EDIT("ㅤㅤ ❓ ㅤㅤ", "event.help.edit", ButtonStyle.SECONDARY),
         EVENT_HELP_NEXT("Next Page", "event.help.next", ButtonStyle.SUCCESS),
         EVENT_HELP_PREV("Previous Page", "event.help.prev", ButtonStyle.PRIMARY),
 
         EVENT_ACCEPT("Accept", "event.accept", ButtonStyle.SUCCESS),
         EVENT_DECLINE("Decline", "event.decline", ButtonStyle.DANGER),
         EVENT_UNSURE("Unsure", "event.unsure", ButtonStyle.PRIMARY),
-        EVENT_EDIT("ㅤㅤEditㅤㅤ", "event.edit", ButtonStyle.PRIMARY),
-        EVENT_DELETE("ㅤㅤDeleteㅤㅤ", "event.delete", ButtonStyle.DANGER),
+        EVENT_EDIT("ㅤ✏️Editㅤㅤ", "event.edit", ButtonStyle.PRIMARY),
+        EVENT_DELETE("ㅤ❌Deleteㅤ", "event.delete", ButtonStyle.SECONDARY),
         UNKNOWN("UNKNOWN", "UNKNOWN", ButtonStyle.UNKNOWN);
 
         private final String label;

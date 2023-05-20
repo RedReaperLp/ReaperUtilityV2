@@ -170,7 +170,8 @@ public class PrepareEmbed {
         EVENT_CHANNEL("Event Channel"),
         ACCEPTED("Accepted"),
         DECLINED("Declined"),
-        UNSURE("Unsure");
+        UNSURE("Unsure"),
+        UNKNOWN("Unknown");
 
         public final String key;
 
@@ -188,7 +189,7 @@ public class PrepareEmbed {
                     return fieldKey;
                 }
             }
-            return null;
+            return UNKNOWN;
         }
     }
 }
