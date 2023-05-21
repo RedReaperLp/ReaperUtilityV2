@@ -4,7 +4,9 @@ import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.settings.JSettings;
 import com.github.redreaperlp.reaperutility.util.Color;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,6 +26,8 @@ public class Event {
     private List<Long> acceptedUsers = new ArrayList<>();
     private List<Long> declinedUsers = new ArrayList<>();
     private List<Long> undecidedUsers = new ArrayList<>();
+
+    private boolean readUsers = false;
 
 
     public Event(long guildId, long channelId, long messageId, LocalDateTime timestamp) {
@@ -117,9 +121,56 @@ public class Event {
     }
 
     public void fire() {
-        new Color.Print("Event " + messageId + " in guild " + guildId + " fired!").printDebug();
+        Message message = Main.jda.getGuildById(guildId).getTextChannelById(channelId).retrieveMessageById(messageId).complete();
+        MessageEmbed embed = message.getEmbeds().get(0);
+        EmbedBuilder builder = new EmbedBuilder(embed);
+        builder.setTitle(embed.getTitle(), message.getJumpUrl());
+        removeExtraFields(builder);
+        List<Thread> threads = new ArrayList<>();
+        new Color.Print("Firing Event " + embed.getTitle() + " (" + messageId + ")!").printDebug();
+
+        for (long user : acceptedUsers) {
+            Thread thread = createReminderThread(user, builder, embed.getTitle());
+            threads.add(thread);
+            thread.start();
+        }
+
+        for (long user : undecidedUsers) {
+            Thread thread = createReminderThread(user, builder, embed.getTitle());
+            threads.add(thread);
+            thread.start();
+        }
+
+        waitForThreads(threads);
         removeFromDatabase();
     }
+
+
+    private void removeExtraFields(EmbedBuilder builder) {
+        int size = builder.getFields().size();
+        builder.getFields().remove(size - 1);
+        builder.getFields().remove(size - 2);
+        builder.getFields().remove(size - 3);
+    }
+
+    private Thread createReminderThread(long userId, EmbedBuilder builder, String title) {
+        return new Thread(() -> {
+            User jdaUser = Main.jda.getUserById(userId);
+            new Color.Print(" - Reminding " + jdaUser.getName() + " (" + jdaUser.getId() + ")").printDebug();
+            jdaUser.openPrivateChannel().complete().sendMessageEmbeds(builder.build()).setContent("The event " + title + " is starting now!").queue();
+        });
+    }
+
+    private void waitForThreads(List<Thread> threads) {
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 
     public void setCurrentScheduler(Scheduler.EventSchduler scheduler) {
         this.currentScheduler = scheduler;
@@ -185,6 +236,36 @@ public class Event {
         builder.getFields().set(fields - 1, new MessageEmbed.Field("Declined", getDeclinedString(), true));
         builder.getFields().set(fields, new MessageEmbed.Field("Undecided", getUndecidedString(), true));
     }
+
+    public boolean hasReadUsers() {
+        return readUsers;
+    }
+
+    public void readUsers(Message message) {
+        readUsers = true;
+        List<MessageEmbed.Field> fields = message.getEmbeds().get(0).getFields();
+        for (MessageEmbed.Field field : fields) {
+            switch (field.getName()) {
+                case "Accepted":
+                    processUserList(field.getValue(), acceptedUsers);
+                    break;
+                case "Declined":
+                    processUserList(field.getValue(), declinedUsers);
+                    break;
+                case "Undecided":
+                    processUserList(field.getValue(), undecidedUsers);
+                    break;
+            }
+        }
+    }
+
+    private void processUserList(String value, List<Long> userList) {
+        for (String s : value.split("\n")) {
+            if (s.equals("-")) continue;
+            userList.add(Long.parseLong(s.substring(2, s.length() - 1)));
+        }
+    }
+
 
     public class EventReminder {
 

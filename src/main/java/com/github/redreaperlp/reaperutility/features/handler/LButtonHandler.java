@@ -129,7 +129,7 @@ public class LButtonHandler extends ListenerAdapter {
     }
 
     private void handleEventAction(ButtonInteractionEvent buttonEvent, int action) {
-        Event event = Scheduler.getEvent(buttonEvent.getMessageIdLong());
+        Event event = Scheduler.getEventByMessage(buttonEvent.getMessage());
         if (event != null) {
             switch (action) {
                 case 0 -> {

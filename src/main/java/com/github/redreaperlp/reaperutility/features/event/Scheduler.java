@@ -2,6 +2,7 @@ package com.github.redreaperlp.reaperutility.features.event;
 
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.util.Color;
+import net.dv8tion.jda.api.entities.Message;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class Scheduler {
     private static final EventSchduler fiveMinuteScheduler = new EventSchduler(60 * 5);
     private static final EventSchduler minuteScheduler = new EventSchduler(60);
     private static final EventSchduler fiveSecondScheduler = new EventSchduler(5);
+
 
     public static void scheduleEvent(Event event) {
         eventList.add(event);
@@ -88,6 +90,9 @@ public class Scheduler {
                     e.printStackTrace();
                 }
                 eventList.remove(toSchedule);
+                if (!toSchedule.hasReadUsers()) {
+                    toSchedule.readUsers(Main.jda.getTextChannelById(toSchedule.getChannelId()).retrieveMessageById(toSchedule.getMessageId()).complete());
+                }
                 toSchedule.fire();
             }).start();
         }
@@ -100,6 +105,15 @@ public class Scheduler {
             }
         }
         return null;
+    }
+
+    public static Event getEventByMessage(Message message) {
+        Event event = getEvent(message.getIdLong());
+        if (event != null && !event.hasReadUsers()) {
+            Color.printTest("Reading users for event " + event.getMessageId());
+            event.readUsers(message);
+        }
+        return event;
     }
 
     public static void deleteEvent(Event deleteEvent) {

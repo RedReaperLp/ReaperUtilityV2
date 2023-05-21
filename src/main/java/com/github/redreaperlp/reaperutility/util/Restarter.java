@@ -153,26 +153,28 @@ public class Restarter implements Runnable {
     }
 
     public void uncaughtHandler() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            public void uncaughtException(Thread t, Throwable e) {
-                if (e.getMessage().contains("Exiting")) {
-                    return;
-                }
-                e.printStackTrace();
-                Color.RED.printError("Exception in thread " + t.getName() + ": " + e.getMessage());
-                StringBuilder stackTrace = new StringBuilder();
-                for (StackTraceElement str : e.getStackTrace()) {
-                    stackTrace.append(str.toString()).append("\n");
-                }
-                if (Main.jda != null) {
-                    Objects.requireNonNull(Main.jda.getTextChannelById(1086673451777007636L)).sendMessageEmbeds(
-                            new EmbedBuilder()
-                                    .setTitle("Exception in thread " + t.getName() + ": " + e.getMessage())
-                                    .setDescription("```" + stackTrace + "```")
-                                    .build()
-                    ).queue();
-                }
-            }
-        });
+//        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+//            public void uncaughtException(Thread t, Throwable e) {
+//                if (e.getMessage().contains("Exiting")) {
+//                    return;
+//                }
+//                e.printStackTrace();
+//                Color.RED.printError("Exception in thread " + t.getName() + ": " + e.getMessage());
+//                StringBuilder stackTrace = new StringBuilder();
+//                for (StackTraceElement str : e.getStackTrace()) {
+//                    stackTrace.append(str.toString()).append("\n");
+//                }
+//                StringBuilder cause = new StringBuilder();
+//                e.getCause().printStackTrace();
+//                if (Main.jda != null) {
+//                    Objects.requireNonNull(Main.jda.getTextChannelById(1086673451777007636L)).sendMessageEmbeds(
+//                            new EmbedBuilder()
+//                                    .setTitle("Exception in thread " + t.getName() + ": " + e.getMessage())
+//                                    .setDescription("```" + stackTrace + "```")
+//                                    .build()
+//                    ).queue();
+//                }
+//            }
+//        });
     }
 }
