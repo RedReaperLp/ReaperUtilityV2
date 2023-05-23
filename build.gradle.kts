@@ -39,12 +39,14 @@ tasks {
     }
 }
 
-tasks.withType<Jar> {
-    manifest {
-        attributes(
-                "Main-Class" to "com.github.redreaperlp.reaperutility.Main"
-        )
-    }
+tasks {
+	withType<Jar> {
+		manifest {
+			attributes(
+					"Main-Class" to "com.github.redreaperlp.reaperutility.Main"
+			)
+		}
+	}
 }
 
 application {

@@ -121,28 +121,32 @@ public class Event {
     }
 
     public void fire() {
-        Message message = Main.jda.getGuildById(guildId).getTextChannelById(channelId).retrieveMessageById(messageId).complete();
-        MessageEmbed embed = message.getEmbeds().get(0);
-        EmbedBuilder builder = new EmbedBuilder(embed);
-        builder.setTitle(embed.getTitle(), message.getJumpUrl());
-        removeExtraFields(builder);
-        List<Thread> threads = new ArrayList<>();
-        new Color.Print("Firing Event " + embed.getTitle() + " (" + messageId + ")!").printDebug();
+        try {
+            Message message = Main.jda.getGuildById(guildId).getTextChannelById(channelId).retrieveMessageById(messageId).complete();
+            MessageEmbed embed = message.getEmbeds().get(0);
+            EmbedBuilder builder = new EmbedBuilder(embed);
+            builder.setTitle(embed.getTitle(), message.getJumpUrl());
+            removeExtraFields(builder);
+            List<Thread> threads = new ArrayList<>();
+            new Color.Print("Firing Event " + embed.getTitle() + " (" + messageId + ")!").printDebug();
 
-        for (long user : acceptedUsers) {
-            Thread thread = createReminderThread(user, builder, embed.getTitle());
-            threads.add(thread);
-            thread.start();
+            for (long user : acceptedUsers) {
+                Thread thread = createReminderThread(user, builder, embed.getTitle());
+                threads.add(thread);
+                thread.start();
+            }
+
+            for (long user : undecidedUsers) {
+                Thread thread = createReminderThread(user, builder, embed.getTitle());
+                threads.add(thread);
+                thread.start();
+            }
+
+            waitForThreads(threads);
+            removeFromDatabase();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        for (long user : undecidedUsers) {
-            Thread thread = createReminderThread(user, builder, embed.getTitle());
-            threads.add(thread);
-            thread.start();
-        }
-
-        waitForThreads(threads);
-        removeFromDatabase();
     }
 
 

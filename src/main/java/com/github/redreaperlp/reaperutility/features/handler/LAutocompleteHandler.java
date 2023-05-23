@@ -37,7 +37,6 @@ public class LAutocompleteHandler extends ListenerAdapter {
         String roleName = event.getOption("role").getAsString().toLowerCase();
 
         for (Role role : roles) {
-            if (roles.size() > 24) break;
             boolean isMatchingRole = isRoleById ? role.getId().contains(String.valueOf(roleId)) : role.getName().toLowerCase().contains(roleName);
             String before = everyone ? "✅" : preparedEvent.getNotification().stream()
                     .anyMatch(s -> s.contains(role.getName())) ? "✅" : "❌";
@@ -45,7 +44,11 @@ public class LAutocompleteHandler extends ListenerAdapter {
                 toReply.add(new Command.Choice(before + role.getName(), role.getId()));
             }
         }
-
+        toReply.sort((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+        //shortening toReply to 25 entries
+        if (toReply.size() > 25) {
+            toReply = toReply.subList(0, 25);
+        }
         event.replyChoices(toReply).queue();
     }
 }

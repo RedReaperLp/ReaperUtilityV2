@@ -92,7 +92,8 @@ public class PrepareEmbed {
     public static ActionRow eventHelpActionRow(boolean prevEnabled, boolean nextEnabled) {
         return ActionRow.of(
                 LButtonHandler.ButtonKey.EVENT_HELP_PREV.getButton().withDisabled(!prevEnabled),
-                LButtonHandler.ButtonKey.EVENT_HELP_NEXT.getButton().withDisabled(!nextEnabled)
+                LButtonHandler.ButtonKey.EVENT_HELP_NEXT.getButton().withDisabled(!nextEnabled),
+                LButtonHandler.ButtonKey.DELETE_MESSAGE.getButton()
         );
     }
 

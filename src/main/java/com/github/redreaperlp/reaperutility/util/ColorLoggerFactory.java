@@ -58,14 +58,6 @@ public class ColorLoggerFactory implements Appender<ILoggingEvent> {
                     }
                     countDown--;
                 }
-                if (Main.jda != null) {
-                    Objects.requireNonNull(Main.jda.getTextChannelById(1086673451777007636L)).sendMessageEmbeds(
-                            new EmbedBuilder()
-                                    .setTitle("Exception in thread " + event.getThreadName() + ": " + event.getMessage())
-                                    .setDescription("```" + error + "```")
-                                    .build()
-                    ).queue();
-                }
                 error = "";
                 countDown = 2;
                 sender = null;

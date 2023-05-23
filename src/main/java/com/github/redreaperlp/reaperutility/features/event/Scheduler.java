@@ -80,6 +80,9 @@ public class Scheduler {
         } else {
             if (toSchedule.getTimestamp().isBefore(now)) {
                 eventList.remove(toSchedule);
+                if (!toSchedule.hasReadUsers()) {
+                    toSchedule.readUsers(Main.jda.getTextChannelById(toSchedule.getChannelId()).retrieveMessageById(toSchedule.getMessageId()).complete());
+                }
                 toSchedule.fire();
                 return;
             }

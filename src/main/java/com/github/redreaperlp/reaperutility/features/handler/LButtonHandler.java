@@ -102,6 +102,10 @@ public class LButtonHandler extends ListenerAdapter {
                 builder.setEmbeds(embed).setComponents(PrepareEmbed.eventHelpActionRow(page > 0, page < Help.EVENT_HELP.pages() - 1));
                 event.editMessage(builder.build()).queue();
             }
+            case DELETE_MESSAGE -> {
+                event.deferEdit().queue();
+                event.getMessage().delete().queue();
+            }
             case EVENT_DELETE -> {
                 if (Scheduler.hasEvent(event.getMessageIdLong())) {
                     Event deleteEvent = Scheduler.getEvent(event.getMessage().getIdLong());
@@ -167,6 +171,7 @@ public class LButtonHandler extends ListenerAdapter {
         EVENT_UNSURE("Unsure", "event.unsure", ButtonStyle.PRIMARY),
         EVENT_EDIT("ㅤ✏️Editㅤㅤ", "event.edit", ButtonStyle.PRIMARY),
         EVENT_DELETE("ㅤ❌Deleteㅤ", "event.delete", ButtonStyle.SECONDARY),
+        DELETE_MESSAGE("❌Delete", "delete.message", ButtonStyle.SECONDARY),
         UNKNOWN("UNKNOWN", "UNKNOWN", ButtonStyle.UNKNOWN);
 
         private final String label;

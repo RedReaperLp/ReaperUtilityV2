@@ -103,7 +103,14 @@ public class Main {
     }
 
     private void enableListeners(JDABuilder builder) {
-        builder.addEventListeners(new LCommandHandler(), new LSelectionHandler(), new LButtonHandler(), new LModalHandler(), new LUserContextHandler(), new LAutocompleteHandler());
+        builder.addEventListeners(new LCommandHandler(),
+                new LSelectionHandler(),
+                new LButtonHandler(),
+                new LModalHandler(),
+                new LUserContextHandler(),
+                new LAutocompleteHandler(),
+                new LReconnectHandler()
+        );
     }
 
     private void enableCommands() {
