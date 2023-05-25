@@ -40,6 +40,12 @@ public class Main {
 
 
     public static void main(String[] args) {
+        new Color.Print("██████╗ ███████╗██████╗     ██████╗ ███████╗ █████╗ ██████╗ ███████╗██████╗     ██╗     ██████╗", Color.RED).appendLine(
+                "██╔══██╗██╔════╝██╔══██╗    ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔════╝██╔══██╗    ██║     ██╔══██╗", Color.RED).appendLine(
+                "██████╔╝█████╗  ██║  ██║    ██████╔╝█████╗  ███████║██████╔╝█████╗  ██████╔╝    ██║     ██████╔╝", Color.RED).appendLine(
+                "██╔══██╗██╔══╝  ██║  ██║    ██╔══██╗██╔══╝  ██╔══██║██╔═══╝ ██╔══╝  ██╔══██╗    ██║     ██╔═══╝", Color.RED).appendLine(
+                "██║  ██║███████╗██████╔╝    ██║  ██║███████╗██║  ██║██║     ███████╗██║  ██║    ███████╗██║", Color.RED).appendLine(
+                "╚═╝  ╚═╝╚══════╝╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝    ╚══════╝╚═╝", Color.RED).printInfo();
         new Color.Print("Loading Settings...").printWarning();
         Main main = new Main();
         Restarter restarter = new Restarter();

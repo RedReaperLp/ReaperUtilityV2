@@ -3,11 +3,20 @@ package com.github.redreaperlp.reaperutility.features.handler;
 import com.github.redreaperlp.reaperutility.Main;
 import com.github.redreaperlp.reaperutility.RUser;
 import com.github.redreaperlp.reaperutility.features.event.PreparedEvent;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,5 +59,26 @@ public class LAutocompleteHandler extends ListenerAdapter {
             toReply = toReply.subList(0, 25);
         }
         event.replyChoices(toReply).queue();
+    }
+
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return;
+        try {
+            URL url = new URL("https://api.quotable.io/random");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            BufferedReader in = new BufferedReader(new java.io.InputStreamReader(con.getInputStream()));
+            JSONObject responseJson = new JSONObject(in.readLine());
+            System.out.println(responseJson.toString(2));
+            EmbedBuilder embedBuilder = new EmbedBuilder();
+            embedBuilder.setTitle("Quote of the Second");
+            embedBuilder.setDescription(responseJson.getString("content"));
+            embedBuilder.setFooter(responseJson.getString("author"));
+            event.getAuthor().openPrivateChannel().complete().sendMessageEmbeds(embedBuilder.build()).complete();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
